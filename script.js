@@ -33,6 +33,7 @@ const PAGE_TEXT = {
         lobbyStart: "Start Race",
         leaveLobby: "Leave Lobby",
         backToLobby: "Back to Lobby",
+        lobbyPlayerWaiting: "Waiting for player",
         hostSetupTitle: "Host is setting up the round",
         hostSetupSubtitle: "Please wait, the race will start soon.",
         lobbyNotConnected: "Not connected",
@@ -50,6 +51,7 @@ const PAGE_TEXT = {
         waitingForHostStart: "Waiting for host to start",
         leaderboardTitle: "Leaderboard",
         raceAgain: "Play Again",
+        gaveUpTag: "Gave up",
         configSubtitle: "Set your pace and race against optional rivals",
         usernameLabel: "Username",
         usernamePlaceholder: "Enter your name",
@@ -100,6 +102,7 @@ const PAGE_TEXT = {
         lobbyStart: "Lancer la course",
         leaveLobby: "Quitter le lobby",
         backToLobby: "Retour au lobby",
+        lobbyPlayerWaiting: "En attente d'un joueur",
         hostSetupTitle: "L'hôte prépare la manche",
         hostSetupSubtitle: "Patiente, la course va commencer.",
         lobbyNotConnected: "Non connecté",
@@ -117,6 +120,7 @@ const PAGE_TEXT = {
         waitingForHostStart: "En attente du lancement par l'hôte",
         leaderboardTitle: "Classement",
         raceAgain: "Rejouer",
+        gaveUpTag: "Abandon",
         configSubtitle: "Règle ton rythme et cours contre des rivaux optionnels",
         usernameLabel: "Pseudo",
         usernamePlaceholder: "Entre ton nom",
@@ -364,6 +368,7 @@ const els = {
     lobbyCodeDisplay: $("lobby-code-display"),
     lobbyStatus: $("lobby-status"),
     lobbyPlayers: $("lobby-players"),
+    lobbyPlayerList: $("lobby-player-list"),
     lobbyStartButton: $("lobby-start-button")
 };
 
@@ -567,6 +572,13 @@ function renderLobbyState(statusKey = null) {
 
     els.lobbyStatus.textContent = status;
     els.lobbyPlayers.textContent = t.lobbyPlayers.replace("{count}", String(state.multiplayer.connectedPlayers));
+    const remoteName = state.multiplayer.connectedPlayers > 1
+        ? state.multiplayer.remotePlayerName
+        : t.lobbyPlayerWaiting;
+    els.lobbyPlayerList.innerHTML = `
+        <div class="lobby-player-item">${escapeHtml(state.username)}${state.multiplayer.isHost ? " (Host)" : ""}</div>
+        <div class="lobby-player-item">${escapeHtml(remoteName)}${state.multiplayer.isHost ? "" : " (Host)"}</div>
+    `;
     els.lobbyStartButton.disabled = !(state.multiplayer.isHost && state.multiplayer.connectedPlayers > 1);
 }
 
@@ -728,10 +740,12 @@ function attachConnectionHandlers(conn) {
 
         if (data.type === "hello" && data.username) {
             state.multiplayer.remotePlayerName = data.username;
+            renderLobbyState();
         }
 
         if (data.type === "username-update" && data.username) {
             state.multiplayer.remotePlayerName = data.username;
+            renderLobbyState();
         }
 
         if (data.type === "start-race-setup") {
@@ -1165,19 +1179,26 @@ function ordinal(n) {
 }
 
 function renderLeaderboard() {
+    const t = getPageText();
     const rows = [];
+
+    const sortRows = (a, b) => {
+        if (a.gaveUp !== b.gaveUp) return a.gaveUp ? 1 : -1;
+        return a.timeSeconds - b.timeSeconds;
+    };
 
     if (isMultiplayerSession()) {
         if (state.multiplayer.localResult) rows.push(state.multiplayer.localResult);
         if (state.multiplayer.remoteResult) rows.push(state.multiplayer.remoteResult);
-        rows.sort((a, b) => a.timeSeconds - b.timeSeconds);
+        rows.sort(sortRows);
     } else {
         const elapsed = state.startTime ? (Date.now() - state.startTime) / 1000 : 0;
         rows.push({
             name: state.username,
             wpm: calculateWPM(elapsed),
             accuracy: calculateAccuracy(),
-            timeSeconds: elapsed
+            timeSeconds: elapsed,
+            gaveUp: false
         });
 
         if (state.enableAI) {
@@ -1187,20 +1208,21 @@ function renderLeaderboard() {
                     name: `Bot ${idx + 1}`,
                     wpm: speed,
                     accuracy: 100,
-                    timeSeconds: aiTime
+                    timeSeconds: aiTime,
+                    gaveUp: false
                 });
             });
         }
 
-        rows.sort((a, b) => a.timeSeconds - b.timeSeconds);
+        rows.sort(sortRows);
     }
 
     els.leaderboardList.innerHTML = rows.map((row, index) => `
         <div class="leaderboard-row">
             <div class="leaderboard-rank">${index + 1}</div>
-            <div class="leaderboard-name">${escapeHtml(row.name)}</div>
+            <div class="leaderboard-name">${escapeHtml(row.name)}${row.gaveUp ? ` <span class="leaderboard-tag">${t.gaveUpTag}</span>` : ""}</div>
             <div class="leaderboard-meta">${row.wpm.toFixed(0)} WPM</div>
-            <div class="leaderboard-meta">${row.timeSeconds.toFixed(2)}s</div>
+            <div class="leaderboard-meta">${row.gaveUp ? "-" : `${row.timeSeconds.toFixed(2)}s`}</div>
         </div>
     `).join("");
 
@@ -1209,7 +1231,7 @@ function renderLeaderboard() {
 
 // ============ End Game ============
 function endGame(options = {}) {
-    const { forcedPosition = null } = options;
+    const { forcedPosition = null, gaveUp = false } = options;
     state.isFinished = true;
     state.isActive = false;
     clearInterval(state.timerInterval);
@@ -1239,7 +1261,8 @@ function endGame(options = {}) {
             name: state.username,
             wpm,
             accuracy: acc,
-            timeSeconds: elapsed
+            timeSeconds: elapsed,
+            gaveUp
         };
 
         if (state.multiplayer.connection && state.multiplayer.connection.open) {
@@ -1262,7 +1285,7 @@ function giveUpGame() {
     // If racers gave up before this player, place right above them.
     const finalPos = Math.max(1, getTotalRacers() - state.giveUpCount);
     state.giveUpCount += 1;
-    endGame({ forcedPosition: finalPos });
+    endGame({ forcedPosition: finalPos, gaveUp: true });
 }
 
 // ============ Quit ============
