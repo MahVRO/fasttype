@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Race Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+
+        <!-- ============ HOME SCREEN ============ -->
+        <section class="screen active" id="home-screen">
+            <h1>Typing Race</h1>
+            <p class="subtitle">Choose your racing mode</p>
+            
+            <div class="mode-selection">
+                <button class="btn-mode" id="solo-button">
+                    <div class="mode-title">Solo</div>
+                    <div class="mode-desc">Race against bots</div>
+                </button>
+                <button class="btn-mode" id="multiplayer-button">
+                    <div class="mode-title">Multiplayer</div>
+                    <div class="mode-desc">Race with classmates</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- ============ CONFIG SCREEN ============ -->
+        <section class="screen" id="config-screen">
+            <h1>Typing Race</h1>
+            <p class="subtitle">Set your pace and race against optional rivals</p>
+
+            <div class="config-section">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your name" value="Player" maxlength="20">
+            </div>
+
+            <div class="config-section">
+                <label>Difficulty</label>
+                <div class="option-row" id="difficulty-options" role="group" aria-label="Difficulty">
+                    <button type="button" class="option-btn" data-group="difficulty" data-value="easy">Easy</button>
+                    <button type="button" class="option-btn active" data-group="difficulty" data-value="medium">Medium</button>
+                    <button type="button" class="option-btn" data-group="difficulty" data-value="hard">Hard</button>
+                </div>
+                <input type="hidden" id="difficulty" value="medium">
+            </div>
+
+            <div class="config-section">
+                <label>Text Length</label>
+                <div class="option-row" id="text-length-options" role="group" aria-label="Text length">
+                    <button type="button" class="option-btn" data-group="text-length" data-value="short">Short</button>
+                    <button type="button" class="option-btn active" data-group="text-length" data-value="medium">Medium</button>
+                    <button type="button" class="option-btn" data-group="text-length" data-value="long">Long</button>
+                </div>
+                <input type="hidden" id="text-length" value="medium">
+            </div>
+
+            <div class="toggle-row">
+                <label class="toggle">
+                    <input type="checkbox" id="enable-ai" checked>
+                    <span>Enable Bot Racers</span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="enable-sound">
+                    <span>Sound Effects</span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="use-random-words">
+                    <span>Random Words</span>
+                </label>
+            </div>
+
+            <button class="btn-primary" id="start-race-button">Start Race</button>
+        </section>
+
+        <!-- ============ ACTIVE GAME SCREEN ============ -->
+        <section class="screen" id="active-screen">
+            <div class="action-row">
+                <button class="btn-danger" id="give-up-button">Give Up</button>
+                <button class="btn-secondary" id="quit-button">Quit Race</button>
+            </div>
+
+            <div class="stats-panel">
+                <div class="stat"><span class="stat-label">WPM</span><span class="stat-value" id="wpm">0</span></div>
+                <div class="stat"><span class="stat-label">Accuracy</span><span class="stat-value" id="accuracy">100%</span></div>
+                <div class="stat"><span class="stat-label">Time</span><span class="stat-value" id="timer">0.000s</span></div>
+                <div class="stat"><span class="stat-label">Position</span><span class="stat-value" id="position">1st</span></div>
+            </div>
+
+            <div class="text-to-type" id="text-display" tabindex="0"></div>
+
+            <!-- Hidden input captures keystrokes -->
+            <input type="text" id="typing-input" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+            <div class="racer-row">
+                <span class="racer-label" id="player-label">You</span>
+                <div class="progress-bar">
+                    <div class="progress player-progress" id="user-progress"></div>
+                </div>
+            </div>
+
+            <div class="ai-racers" id="ai-racers">
+                <div class="racer-row">
+                    <span class="racer-label">Bot 1</span>
+                    <div class="progress-bar">
+                        <div class="progress ai-progress" id="ai1-progress"></div>
+                    </div>
+                </div>
+                <div class="racer-row">
+                    <span class="racer-label">Bot 2</span>
+                    <div class="progress-bar">
+                        <div class="progress ai-progress" id="ai2-progress"></div>
+                    </div>
+                </div>
+                <div class="racer-row">
+                    <span class="racer-label">Bot 3</span>
+                    <div class="progress-bar">
+                        <div class="progress ai-progress" id="ai3-progress"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ END SCREEN ============ -->
+        <section class="screen" id="end-screen">
+            <h2>Race Complete!</h2>
+            <div class="results-grid">
+                <div class="result-card">
+                    <span class="result-label">WPM</span>
+                    <span class="result-value" id="final-wpm">0</span>
+                </div>
+                <div class="result-card">
+                    <span class="result-label">Accuracy</span>
+                    <span class="result-value" id="final-accuracy">0%</span>
+                </div>
+                <div class="result-card">
+                    <span class="result-label">Time</span>
+                    <span class="result-value" id="final-time">0.000s</span>
+                </div>
+                <div class="result-card">
+                    <span class="result-label">Position</span>
+                    <span class="result-value" id="final-position">-</span>
+                </div>
+            </div>
+            <button class="btn-primary" id="play-again-button">Play Again</button>
+        </section>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
