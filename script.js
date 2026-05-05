@@ -23,15 +23,15 @@ const WORD_LISTS = {
     ],
     fr: [
         "le", "renard", "brun", "rapide", "saute", "par", "dessus", "chien", "paresseux", "pratique",
-        "rend", "meilleur", "clavier", "vitesse", "texte", "course", "ecole", "classe", "amis", "apprendre",
-        "coder", "logique", "idee", "projet", "avenir", "travail", "effort", "patience", "focus", "calme",
-        "lecture", "livre", "musique", "energie", "routine", "objectif", "progres", "detail", "precision", "rythme",
-        "phrase", "mot", "lettre", "erreur", "correction", "exercice", "memoire", "habitude", "discipline", "temps",
-        "minute", "seconde", "resultat", "score", "confiance", "equipe", "partage", "internet", "outil", "solution",
-        "esprit", "curieux", "creatif", "inspire", "motivation", "reussite", "defi", "simple", "complexe", "rapide",
-        "lent", "fluide", "propre", "utile", "chanson", "voyage", "histoire", "culture", "langue", "francais",
-        "anglais", "communication", "message", "clarte", "souffle", "pause", "attention", "concentration", "gagner", "avancer",
-        "niveau", "facile", "moyen", "difficile", "depart", "arrivee", "progression", "constance", "developper", "construire"
+        "rend", "meilleur", "clavier", "vitesse", "texte", "course", "école", "classe", "amis", "apprendre",
+        "coder", "logique", "idée", "projet", "avenir", "travail", "effort", "patience", "focus", "calme",
+        "lecture", "livre", "musique", "énergie", "routine", "objectif", "progrès", "détail", "précision", "rythme",
+        "phrase", "mot", "lettre", "erreur", "correction", "exercice", "mémoire", "habitude", "discipline", "temps",
+        "minute", "seconde", "résultat", "score", "confiance", "équipe", "partagé", "internet", "outil", "solution",
+        "esprit", "curieux", "créatif", "inspiré", "motivation", "réussite", "défi", "simple", "complexe", "rapide",
+        "lent", "fluide", "propre", "utile", "chanson", "voyage", "histoire", "culture", "langue", "français",
+        "anglais", "communication", "message", "clarté", "souffle", "pause", "attention", "concentration", "gagner", "avancer",
+        "niveau", "facile", "moyen", "difficile", "départ", "arrivée", "progression", "constance", "développer", "construire"
     ]
 };
 
@@ -56,20 +56,20 @@ const BANK_TEMPLATES = {
     },
     fr: {
         easy: {
-            subjects: ["L eleve", "Notre equipe", "Le joueur", "Un debutant", "Le coureur", "Mon ami", "La classe", "Ce codeur", "Le prof", "Un apprenant"],
-            verbs: ["tape", "lit", "construit", "ecrit", "verifie", "observe", "s entraine", "garde", "corrige", "suivit"],
-            objects: ["des mots courts", "des lignes simples", "des objectifs du jour", "des notes claires", "des exercices faciles", "des consignes nettes", "de petites taches", "un rythme stable", "des idees rapides", "de petits progres"],
-            tails: ["avec calme", "avant midi", "chaque matin", "en une minute", "sans stress", "a l ecole", "apres le cours", "avec precision", "pour aller plus vite", "avec bonne justesse"]
+            subjects: ["L'élève", "Notre équipe", "Le joueur", "Un débutant", "Le coureur", "Mon ami", "La classe", "Ce codeur", "Le prof", "Un apprenant"],
+            verbs: ["tape", "lit", "construit", "écrit", "vérifie", "observe", "s'entraîne", "garde", "corrige", "suit"],
+            objects: ["des mots courts", "des lignes simples", "des objectifs du jour", "des notes claires", "des exercices faciles", "des consignes nettes", "de petites tâches", "un rythme stable", "des idées rapides", "de petits progrès"],
+            tails: ["avec calme", "avant midi", "chaque matin", "en une minute", "sans stress", "à l'école", "après le cours", "avec précision", "pour aller plus vite", "avec une bonne justesse"]
         },
         medium: {
-            starts: ["Taper avec regularite", "Une pratique concentree", "Une routine utile", "La repetition quotidienne", "Un retour clair", "Une correction rapide", "Une attention stable", "Un progres constant", "Un effort equilibre", "Un entrainement intentionnel"],
-            middles: ["ameliore la vitesse et la confiance", "construit une memoire clavier solide", "transforme chaque erreur en lecon", "renforce les habitudes utiles", "rend les resultats plus stables", "donne des saisies plus propres", "diminue l hesitation sur les passages longs", "garde la performance sous pression", "augmente la qualite sans se precipiter", "cree un bon elan sur la duree"],
-            ends: ["quand les objectifs restent clairs", "car les petits gains se cumulent", "si chaque session a un but", "quand le retour est applique tout de suite", "tant que l effort reste constant", "si le joueur respire calmement", "quand la precision passe avant la vitesse", "si le suivi est fait chaque jour", "quand la confiance monte avec la repetition", "si le niveau du defi reste adapte"]
+            starts: ["Taper avec régularité", "Une pratique concentrée", "Une routine utile", "La répétition quotidienne", "Un retour clair", "Une correction rapide", "Une attention stable", "Un progrès constant", "Un effort équilibré", "Un entraînement intentionnel"],
+            middles: ["améliore la vitesse et la confiance", "construit une mémoire clavier solide", "transforme chaque erreur en leçon", "renforce les habitudes utiles", "rend les résultats plus stables", "donne des saisies plus propres", "diminue l'hésitation sur les passages longs", "garde la performance sous pression", "augmente la qualité sans se précipiter", "crée un bon élan sur la durée"],
+            ends: ["quand les objectifs restent clairs", "car les petits gains se cumulent", "si chaque session a un but", "quand le retour est appliqué tout de suite", "tant que l'effort reste constant", "si le joueur respire calmement", "quand la précision passe avant la vitesse", "si le suivi est fait chaque jour", "quand la confiance monte avec la répétition", "si le niveau du défi reste adapté"]
         },
         hard: {
-            openings: ["Meme si la course semble simple", "Quand la pression monte a la fin", "Parce que la frappe avancee demande precision", "Pendant que les rivaux cherchent la vitesse brute", "Quand le texte devient exigeant", "Comme les passages difficiles revelent les faiblesses", "Meme si le chrono parait severe", "Si un joueur veut une constance elite", "Chaque fois que l attention baisse", "Quand la strategie remplace la panique"],
-            pivots: ["le controle du rythme decide encore le resultat", "les micro corrections evitent de grosses erreurs", "une respiration volontaire protege la concentration", "un timing propre depasse les accelerations au hasard", "la repetition structuree stabilise les motifs complexes", "la lecture des erreurs ameliore chaque decision", "le calme sous pression cree des gains visibles", "la clarte du geste maintient la precision", "la patience technique ouvre une vitesse durable", "de petits ajustements produisent de grandes fins"],
-            closings: ["donc le meilleur score vient de la precision avant l acceleration", "c est pourquoi une execution stable bat souvent un style chaotique", "ainsi chaque session doit valoriser le controle avant le risque", "et c est la que les joueurs experimentes prennent l avantage", "donc le progres depend d un systeme et non de la chance", "ce qui montre que la discipline porte les passages les plus durs", "ainsi la constance compte plus qu un depart trop rapide", "et voila pourquoi la pratique deliberate reste gagnante", "donc la performance elevee vient d habitudes repetables", "ce qui rend meme un texte dur plus gerable"]
+            openings: ["Même si la course semble simple", "Quand la pression monte à la fin", "Parce que la frappe avancée demande de la précision", "Pendant que les rivaux cherchent la vitesse brute", "Quand le texte devient exigeant", "Comme les passages difficiles révèlent les faiblesses", "Même si le chrono paraît sévère", "Si un joueur veut une constance élite", "Chaque fois que l'attention baisse", "Quand la stratégie remplace la panique"],
+            pivots: ["le contrôle du rythme décide encore le résultat", "les micro-corrections évitent de grosses erreurs", "une respiration volontaire protège la concentration", "un timing propre dépasse les accélérations au hasard", "la répétition structurée stabilise les motifs complexes", "la lecture des erreurs améliore chaque décision", "le calme sous pression crée des gains visibles", "la clarté du geste maintient la précision", "la patience technique ouvre une vitesse durable", "de petits ajustements produisent de grandes fins"],
+            closings: ["donc le meilleur score vient de la précision avant l'accélération", "c'est pourquoi une exécution stable bat souvent un style chaotique", "ainsi chaque session doit valoriser le contrôle avant le risque", "et c'est là que les joueurs expérimentés prennent l'avantage", "donc le progrès dépend d'un système et non de la chance", "ce qui montre que la discipline porte les passages les plus durs", "ainsi la constance compte plus qu'un départ trop rapide", "et voilà pourquoi la pratique délibérée reste gagnante", "donc la performance élevée vient d'habitudes répétables", "ce qui rend même un texte dur plus gérable"]
         }
     }
 };
@@ -97,7 +97,7 @@ function buildText(lang, difficulty, textLength, index) {
                 parts.push(`${pick(tpl.subjects, k, 3)} ${pick(tpl.verbs, k, 5)} ${pick(tpl.objects, k, 7)} ${pick(tpl.tails, k, 9)}.`);
             }
         }
-        parts.push(lang === "en" ? `Training text ${serial}.` : `Texte d entrainement ${serial}.`);
+        parts.push(lang === "en" ? `Training text ${serial}.` : `Texte d'entraînement ${serial}.`);
         return parts.join(" ");
     }
 
@@ -126,7 +126,7 @@ function buildText(lang, difficulty, textLength, index) {
         const k = index * 5 + i;
         parts.push(`${pick(tpl.openings, k, 3)}, ${pick(tpl.pivots, k, 5)}, ${pick(tpl.closings, k, 7)}.`);
     }
-    parts.push(lang === "en" ? `Advanced passage ${serial}.` : `Passage avance ${serial}.`);
+    parts.push(lang === "en" ? `Advanced passage ${serial}.` : `Passage avancé ${serial}.`);
     return parts.join(" ");
 }
 
