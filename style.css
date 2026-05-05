@@ -154,6 +154,44 @@ h2 {
     text-align: left;
 }
 
+.lobby-username-row {
+    margin: 16px 0 12px;
+    text-align: left;
+}
+
+.lobby-username-row label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    color: #d0ddcc;
+    font-weight: 600;
+}
+
+.lobby-username-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lobby-username-controls input {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 12px;
+    border: 2px solid #3f4f3d;
+    border-radius: 8px;
+    background-color: #2a3429;
+    color: #ffffff;
+}
+
+.lobby-username-controls input:focus {
+    outline: none;
+    border-color: #c8a74f;
+}
+
+#host-setup-screen {
+    padding-top: 14px;
+}
+
 .lobby-field-label {
     color: #afbdab;
     font-size: 0.8em;

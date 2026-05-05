@@ -55,6 +55,14 @@
             <h1 id="lobby-title">Lobby</h1>
             <p class="subtitle" id="lobby-subtitle">Share your code or wait for the host</p>
 
+            <div class="lobby-username-row">
+                <label for="lobby-username-input" id="lobby-username-label">Username</label>
+                <div class="lobby-username-controls">
+                    <input type="text" id="lobby-username-input" maxlength="20" placeholder="Enter your name">
+                    <button class="btn-secondary" id="lobby-username-save-button">Save</button>
+                </div>
+            </div>
+
             <div class="lobby-card">
                 <div class="lobby-field-label" id="lobby-code-label">Lobby Code</div>
                 <div class="lobby-code-row">
@@ -69,6 +77,12 @@
                 <button class="btn-primary" id="lobby-start-button">Start Race</button>
                 <button class="btn-secondary" id="leave-lobby-button">Leave Lobby</button>
             </div>
+        </section>
+
+        <section class="screen" id="host-setup-screen">
+            <h1 id="host-setup-title">Host is setting up the round</h1>
+            <p class="subtitle" id="host-setup-subtitle">Please wait, the race will start soon.</p>
+            <button class="btn-secondary" id="host-setup-back-lobby-button">Back to Lobby</button>
         </section>
 
         <!-- ============ CONFIG SCREEN ============ -->
@@ -205,7 +219,7 @@
                 <h3 id="leaderboard-title">Leaderboard</h3>
                 <div class="leaderboard-list" id="leaderboard-list"></div>
             </div>
-            <button class="btn-secondary" id="race-again-button" style="display:none;">Race Again</button>
+            <button class="btn-secondary" id="back-to-lobby-button" style="display:none;">Back to Lobby</button>
             <button class="btn-primary" id="play-again-button">Play Again</button>
         </section>
 

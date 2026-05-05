@@ -25,11 +25,16 @@ const PAGE_TEXT = {
         back: "Back",
         lobbyTitle: "Lobby",
         lobbySubtitle: "Share your code or wait for the host",
+        lobbyUsernameLabel: "Username",
+        lobbyUsernameSave: "Save",
         lobbyCodeLabel: "Lobby Code",
         copy: "Copy",
         copied: "Copied!",
         lobbyStart: "Start Race",
         leaveLobby: "Leave Lobby",
+        backToLobby: "Back to Lobby",
+        hostSetupTitle: "Host is setting up the round",
+        hostSetupSubtitle: "Please wait, the race will start soon.",
         lobbyNotConnected: "Not connected",
         lobbyWaitingHost: "Waiting for the host to start the race",
         lobbyWaitingGuest: "Waiting for another player to join",
@@ -44,7 +49,7 @@ const PAGE_TEXT = {
         lobbyStartUnavailable: "Only the host can start the race after a player joins.",
         waitingForHostStart: "Waiting for host to start",
         leaderboardTitle: "Leaderboard",
-        raceAgain: "Race Again",
+        raceAgain: "Play Again",
         configSubtitle: "Set your pace and race against optional rivals",
         usernameLabel: "Username",
         usernamePlaceholder: "Enter your name",
@@ -87,11 +92,16 @@ const PAGE_TEXT = {
         back: "Retour",
         lobbyTitle: "Lobby",
         lobbySubtitle: "Partage ton code ou attends l'hôte",
+        lobbyUsernameLabel: "Pseudo",
+        lobbyUsernameSave: "Enregistrer",
         lobbyCodeLabel: "Code du lobby",
         copy: "Copier",
         copied: "Copié !",
         lobbyStart: "Lancer la course",
         leaveLobby: "Quitter le lobby",
+        backToLobby: "Retour au lobby",
+        hostSetupTitle: "L'hôte prépare la manche",
+        hostSetupSubtitle: "Patiente, la course va commencer.",
         lobbyNotConnected: "Non connecté",
         lobbyWaitingHost: "En attente du lancement par l'hôte",
         lobbyWaitingGuest: "En attente d'un autre joueur",
@@ -106,7 +116,7 @@ const PAGE_TEXT = {
         lobbyStartUnavailable: "Seul l'hôte peut lancer la course après la connexion d'un joueur.",
         waitingForHostStart: "En attente du lancement par l'hôte",
         leaderboardTitle: "Classement",
-        raceAgain: "Relancer",
+        raceAgain: "Rejouer",
         configSubtitle: "Règle ton rythme et cours contre des rivaux optionnels",
         usernameLabel: "Pseudo",
         usernamePlaceholder: "Entre ton nom",
@@ -329,6 +339,7 @@ const screens = {
     home:   $("home-screen"),
     multiplayer: $("multiplayer-screen"),
     lobby:  $("lobby-screen"),
+    hostSetup: $("host-setup-screen"),
     config: $("config-screen"),
     active: $("active-screen"),
     end:    $("end-screen")
@@ -403,6 +414,12 @@ function initMultiplayerScreen() {
     clearInterval(state.aiInterval);
 }
 
+function initHostSetupScreen() {
+    showScreen("hostSetup");
+    clearInterval(state.timerInterval);
+    clearInterval(state.aiInterval);
+}
+
 function initConfigScreen() {
     showScreen("config");
     clearInterval(state.timerInterval);
@@ -437,6 +454,7 @@ function loadConfigToState() {
 
 function applyStateToConfigControls() {
     $("username").value = state.username;
+    $("lobby-username-input").value = state.username;
     $("page-language").value = state.pageLanguage;
     $("language").value = state.language;
     $("strict-accents").checked = state.strictAccents;
@@ -471,10 +489,15 @@ function applyPageLanguage() {
     $("back-home-button").textContent = t.back;
     $("lobby-title").textContent = t.lobbyTitle;
     $("lobby-subtitle").textContent = t.lobbySubtitle;
+    $("lobby-username-label").textContent = t.lobbyUsernameLabel;
+    $("lobby-username-save-button").textContent = t.lobbyUsernameSave;
     $("lobby-code-label").textContent = t.lobbyCodeLabel;
     $("copy-lobby-code-button").textContent = t.copy;
     $("lobby-start-button").textContent = t.lobbyStart;
     $("leave-lobby-button").textContent = t.leaveLobby;
+    $("host-setup-title").textContent = t.hostSetupTitle;
+    $("host-setup-subtitle").textContent = t.hostSetupSubtitle;
+    $("host-setup-back-lobby-button").textContent = t.backToLobby;
     $("config-subtitle").textContent = t.configSubtitle;
     $("username-label").textContent = t.usernameLabel;
     $("username").placeholder = t.usernamePlaceholder;
@@ -503,8 +526,8 @@ function applyPageLanguage() {
     $("result-position-label").textContent = t.statPosition;
     $("end-title").textContent = t.endTitle;
     $("leaderboard-title").textContent = t.leaderboardTitle;
-    $("race-again-button").textContent = t.raceAgain;
-    $("play-again-button").textContent = t.playAgain;
+    $("play-again-button").textContent = t.raceAgain;
+    $("back-to-lobby-button").textContent = t.backToLobby;
     updateConfigStartButtonState();
     renderLobbyState();
 }
@@ -593,11 +616,13 @@ function updateConfigStartButtonState() {
     const startBtn = $("start-race-button");
 
     if (isMultiplayerSession() && !state.multiplayer.isHost) {
+        startBtn.style.display = "none";
         startBtn.disabled = true;
         startBtn.textContent = t.waitingForHostStart;
         return;
     }
 
+    startBtn.style.display = "inline-block";
     startBtn.disabled = false;
     startBtn.textContent = t.startRace;
 }
@@ -705,14 +730,17 @@ function attachConnectionHandlers(conn) {
             state.multiplayer.remotePlayerName = data.username;
         }
 
-        if (data.type === "start-race") {
+        if (data.type === "username-update" && data.username) {
+            state.multiplayer.remotePlayerName = data.username;
+        }
+
+        if (data.type === "start-race-setup") {
             state.multiplayer.mode = "multiplayer";
-            initConfigScreen();
+            initHostSetupScreen();
         }
 
         if (data.type === "race-start" && data.config) {
             state.multiplayer.mode = "multiplayer";
-            initConfigScreen();
             startGameFromConfig(data.config);
         }
 
@@ -754,6 +782,7 @@ function createLobby() {
     state.multiplayer.isHost = true;
     state.multiplayer.mode = "multiplayer";
     state.multiplayer.connectedPlayers = 1;
+    $("lobby-username-input").value = state.username;
     openLobbyScreen("lobbyConnecting");
 
     peer.on("open", () => {
@@ -801,6 +830,7 @@ function joinLobby() {
     state.multiplayer.isHost = false;
     state.multiplayer.mode = "multiplayer";
     state.multiplayer.connectedPlayers = 1;
+    $("lobby-username-input").value = state.username;
     openLobbyScreen("lobbyConnecting");
 
     peer.on("open", () => {
@@ -823,6 +853,17 @@ function leaveLobby() {
     initMultiplayerScreen();
 }
 
+function saveLobbyUsername() {
+    const next = $("lobby-username-input").value.trim() || "Player";
+    state.username = next;
+    $("username").value = state.username;
+    persistConfig();
+
+    if (state.multiplayer.connection && state.multiplayer.connection.open) {
+        state.multiplayer.connection.send({ type: "username-update", username: state.username });
+    }
+}
+
 function startMultiplayerRace() {
     const t = getPageText();
     if (!(state.multiplayer.isHost && state.multiplayer.connection && state.multiplayer.connection.open)) {
@@ -830,8 +871,34 @@ function startMultiplayerRace() {
         return;
     }
 
-    state.multiplayer.connection.send({ type: "start-race" });
+    state.multiplayer.connection.send({ type: "start-race-setup" });
     initConfigScreen();
+}
+
+function handlePlayAgain() {
+    if (!isMultiplayerSession()) {
+        initHomeScreen();
+        return;
+    }
+
+    if (state.multiplayer.isHost) {
+        if (state.multiplayer.connection && state.multiplayer.connection.open) {
+            state.multiplayer.connection.send({ type: "start-race-setup" });
+        }
+        initConfigScreen();
+        return;
+    }
+
+    initHostSetupScreen();
+}
+
+function handleBackToLobbyFromEnd() {
+    if (!isMultiplayerSession()) {
+        initHomeScreen();
+        return;
+    }
+
+    openLobbyScreen();
 }
 
 // ============ Start Game ============
@@ -1137,7 +1204,7 @@ function renderLeaderboard() {
         </div>
     `).join("");
 
-    $("race-again-button").style.display = isMultiplayerSession() ? "inline-block" : "none";
+    $("back-to-lobby-button").style.display = isMultiplayerSession() ? "inline-block" : "none";
 }
 
 // ============ End Game ============
@@ -1212,8 +1279,10 @@ $("multiplayer-button").addEventListener("click", initMultiplayerScreen);
 $("create-lobby-button").addEventListener("click", createLobby);
 $("join-lobby-button").addEventListener("click", joinLobby);
 $("back-home-button").addEventListener("click", initHomeScreen);
+$("host-setup-back-lobby-button").addEventListener("click", () => openLobbyScreen());
 $("leave-lobby-button").addEventListener("click", leaveLobby);
 $("lobby-start-button").addEventListener("click", startMultiplayerRace);
+$("lobby-username-save-button").addEventListener("click", saveLobbyUsername);
 $("copy-lobby-code-button").addEventListener("click", async () => {
     const t = getPageText();
     if (!state.multiplayer.lobbyCode) return;
@@ -1229,8 +1298,8 @@ $("copy-lobby-code-button").addEventListener("click", async () => {
 });
 
 $("start-race-button").addEventListener("click", startGame);
-$("race-again-button").addEventListener("click", initConfigScreen);
-$("play-again-button").addEventListener("click", initHomeScreen);
+$("play-again-button").addEventListener("click", handlePlayAgain);
+$("back-to-lobby-button").addEventListener("click", handleBackToLobbyFromEnd);
 $("quit-button").addEventListener("click", quitGame);
 $("give-up-button").addEventListener("click", giveUpGame);
 els.typingInput.addEventListener("input", handleTyping);
