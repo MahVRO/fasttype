@@ -571,6 +571,54 @@ h2 {
     margin-top: 8px;
 }
 
+.leaderboard-card {
+    background-color: #2a3429;
+    border-radius: 12px;
+    border: 1px solid #3f4f3d;
+    padding: 16px;
+    margin: 0 0 16px;
+    text-align: left;
+}
+
+.leaderboard-card h3 {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 1.05em;
+}
+
+.leaderboard-list {
+    display: grid;
+    gap: 8px;
+}
+
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    background-color: #1f281f;
+    border: 1px solid #3a4939;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.leaderboard-rank {
+    color: #c8a74f;
+    font-weight: 700;
+}
+
+.leaderboard-name {
+    color: #edf0e7;
+    font-weight: 600;
+}
+
+.leaderboard-meta {
+    color: #afbdab;
+    font-size: 0.88em;
+    min-width: 72px;
+    text-align: right;
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 600px) {
     .container { padding: 20px; padding-top: 70px; }

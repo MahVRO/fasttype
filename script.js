@@ -42,6 +42,9 @@ const PAGE_TEXT = {
         lobbyJoinFailed: "Unable to join that lobby.",
         lobbyPeerMissing: "Multiplayer is unavailable right now.",
         lobbyStartUnavailable: "Only the host can start the race after a player joins.",
+        waitingForHostStart: "Waiting for host to start",
+        leaderboardTitle: "Leaderboard",
+        raceAgain: "Race Again",
         configSubtitle: "Set your pace and race against optional rivals",
         usernameLabel: "Username",
         usernamePlaceholder: "Enter your name",
@@ -101,6 +104,9 @@ const PAGE_TEXT = {
         lobbyJoinFailed: "Impossible de rejoindre ce lobby.",
         lobbyPeerMissing: "Le multijoueur est indisponible pour le moment.",
         lobbyStartUnavailable: "Seul l'hôte peut lancer la course après la connexion d'un joueur.",
+        waitingForHostStart: "En attente du lancement par l'hôte",
+        leaderboardTitle: "Classement",
+        raceAgain: "Relancer",
         configSubtitle: "Règle ton rythme et cours contre des rivaux optionnels",
         usernameLabel: "Pseudo",
         usernamePlaceholder: "Entre ton nom",
@@ -306,7 +312,11 @@ const state = {
         lobbyCode: "",
         isHost: false,
         connectedPlayers: 1,
-        mode: "solo"
+        mode: "solo",
+        remotePlayerName: "Guest",
+        localResult: null,
+        remoteResult: null,
+        raceConfig: null
     }
 };
 
@@ -339,6 +349,7 @@ const els = {
     finalTime:     $("final-time"),
     finalPosition: $("final-position"),
     playerLabel:   $("player-label"),
+    leaderboardList: $("leaderboard-list"),
     lobbyCodeDisplay: $("lobby-code-display"),
     lobbyStatus: $("lobby-status"),
     lobbyPlayers: $("lobby-players"),
@@ -491,7 +502,10 @@ function applyPageLanguage() {
     $("result-time-label").textContent = t.statTime;
     $("result-position-label").textContent = t.statPosition;
     $("end-title").textContent = t.endTitle;
+    $("leaderboard-title").textContent = t.leaderboardTitle;
+    $("race-again-button").textContent = t.raceAgain;
     $("play-again-button").textContent = t.playAgain;
+    updateConfigStartButtonState();
     renderLobbyState();
 }
 
@@ -509,6 +523,10 @@ function resetMultiplayerState() {
     state.multiplayer.isHost = false;
     state.multiplayer.connectedPlayers = 1;
     state.multiplayer.mode = "solo";
+    state.multiplayer.remotePlayerName = "Guest";
+    state.multiplayer.localResult = null;
+    state.multiplayer.remoteResult = null;
+    state.multiplayer.raceConfig = null;
 }
 
 function renderLobbyState(statusKey = null) {
@@ -561,8 +579,88 @@ function syncStateFromConfigControls() {
     state.enableSound = $("enable-sound").checked;
     state.useRandomWords = $("use-random-words").checked;
     applyPageLanguage();
+    updateConfigStartButtonState();
     updateLanguageDependentSettings();
     persistConfig();
+}
+
+function isMultiplayerSession() {
+    return state.multiplayer.mode === "multiplayer";
+}
+
+function updateConfigStartButtonState() {
+    const t = getPageText();
+    const startBtn = $("start-race-button");
+
+    if (isMultiplayerSession() && !state.multiplayer.isHost) {
+        startBtn.disabled = true;
+        startBtn.textContent = t.waitingForHostStart;
+        return;
+    }
+
+    startBtn.disabled = false;
+    startBtn.textContent = t.startRace;
+}
+
+function buildRaceTextForCurrentSettings() {
+    if (state.useRandomWords) {
+        const wordCounts = {
+            short: 15,
+            medium: 35,
+            long: 75
+        };
+        return generateRandomWordText(wordCounts[state.textLength]);
+    }
+
+    const pool = TEXT_BANK[state.language][state.difficulty][state.textLength];
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function startGameFromConfig(config) {
+    state.language = config.language;
+    state.strictAccents = config.strictAccents;
+    state.difficulty = config.difficulty;
+    state.textLength = config.textLength;
+    state.useRandomWords = config.useRandomWords;
+    state.enableSound = config.enableSound;
+    state.enableAI = Boolean(config.enableAI);
+    state.text = config.text;
+
+    state.multiplayer.raceConfig = config;
+    state.multiplayer.localResult = null;
+    state.multiplayer.remoteResult = null;
+
+    const ranges = {
+        easy:   [25, 45],
+        medium: [45, 70],
+        hard:   [70, 100]
+    };
+    const [min, max] = ranges[state.difficulty];
+    state.aiSpeeds = [0, 1, 2].map(() => min + Math.random() * (max - min));
+
+    state.startTime = null;
+    state.isActive = false;
+    state.isFinished = false;
+    state.typedChars = 0;
+    state.correctChars = 0;
+    state.mistakes = 0;
+    state.currentInput = "";
+    state.aiProgress = [0, 0, 0];
+    state.position = 1;
+    state.giveUpCount = 0;
+
+    els.typingInput.value = "";
+    els.playerLabel.textContent = state.username.slice(0, 8);
+    els.aiRacers.style.display = state.enableAI ? "block" : "none";
+
+    renderText();
+    updateStats();
+    updateProgress();
+    updateAIProgress(0);
+    updatePositions();
+
+    showScreen("active");
+    setTimeout(() => els.typingInput.focus(), 50);
 }
 
 function persistConfig() {
@@ -603,9 +701,26 @@ function attachConnectionHandlers(conn) {
             renderLobbyState("lobbyConnected");
         }
 
+        if (data.type === "hello" && data.username) {
+            state.multiplayer.remotePlayerName = data.username;
+        }
+
         if (data.type === "start-race") {
             state.multiplayer.mode = "multiplayer";
             initConfigScreen();
+        }
+
+        if (data.type === "race-start" && data.config) {
+            state.multiplayer.mode = "multiplayer";
+            initConfigScreen();
+            startGameFromConfig(data.config);
+        }
+
+        if (data.type === "race-result" && data.result) {
+            state.multiplayer.remoteResult = data.result;
+            if (screens.end.classList.contains("active")) {
+                renderLeaderboard();
+            }
         }
     });
 
@@ -651,6 +766,9 @@ function createLobby() {
             return;
         }
         attachConnectionHandlers(conn);
+        conn.on("open", () => {
+            conn.send({ type: "hello", username: state.username });
+        });
     });
 
     peer.on("error", () => {
@@ -688,6 +806,9 @@ function joinLobby() {
     peer.on("open", () => {
         const conn = peer.connect(lobbyPeerIdFromCode(lobbyCode), { reliable: true });
         attachConnectionHandlers(conn);
+        conn.on("open", () => {
+            conn.send({ type: "hello", username: state.username });
+        });
     });
 
     peer.on("error", () => {
@@ -726,18 +847,30 @@ function generateRandomWordText(wordCount) {
 function startGame() {
     syncStateFromConfigControls();
 
-    // Pick a random text or generate from random words
-    if (state.useRandomWords) {
-        const wordCounts = {
-            short: 15,
-            medium: 35,
-            long: 75
+    if (isMultiplayerSession()) {
+        if (!state.multiplayer.isHost) return;
+
+        const config = {
+            language: state.language,
+            strictAccents: state.strictAccents,
+            difficulty: state.difficulty,
+            textLength: state.textLength,
+            useRandomWords: state.useRandomWords,
+            enableSound: state.enableSound,
+            enableAI: false,
+            text: buildRaceTextForCurrentSettings()
         };
-        state.text = generateRandomWordText(wordCounts[state.textLength]);
-    } else {
-        const pool = TEXT_BANK[state.language][state.difficulty][state.textLength];
-        state.text = pool[Math.floor(Math.random() * pool.length)];
+
+        if (state.multiplayer.connection && state.multiplayer.connection.open) {
+            state.multiplayer.connection.send({ type: "race-start", config });
+        }
+
+        startGameFromConfig(config);
+        return;
     }
+
+    // Pick a random text or generate from random words
+    state.text = buildRaceTextForCurrentSettings();
 
     // AI speeds (WPM) by difficulty - randomized within range
     const ranges = {
@@ -964,6 +1097,49 @@ function ordinal(n) {
     return s[(v - 20) % 10] || s[v] || s[0];
 }
 
+function renderLeaderboard() {
+    const rows = [];
+
+    if (isMultiplayerSession()) {
+        if (state.multiplayer.localResult) rows.push(state.multiplayer.localResult);
+        if (state.multiplayer.remoteResult) rows.push(state.multiplayer.remoteResult);
+        rows.sort((a, b) => a.timeSeconds - b.timeSeconds);
+    } else {
+        const elapsed = state.startTime ? (Date.now() - state.startTime) / 1000 : 0;
+        rows.push({
+            name: state.username,
+            wpm: calculateWPM(elapsed),
+            accuracy: calculateAccuracy(),
+            timeSeconds: elapsed
+        });
+
+        if (state.enableAI) {
+            state.aiSpeeds.forEach((speed, idx) => {
+                const aiTime = (state.text.length / (speed * 5)) * 60;
+                rows.push({
+                    name: `Bot ${idx + 1}`,
+                    wpm: speed,
+                    accuracy: 100,
+                    timeSeconds: aiTime
+                });
+            });
+        }
+
+        rows.sort((a, b) => a.timeSeconds - b.timeSeconds);
+    }
+
+    els.leaderboardList.innerHTML = rows.map((row, index) => `
+        <div class="leaderboard-row">
+            <div class="leaderboard-rank">${index + 1}</div>
+            <div class="leaderboard-name">${escapeHtml(row.name)}</div>
+            <div class="leaderboard-meta">${row.wpm.toFixed(0)} WPM</div>
+            <div class="leaderboard-meta">${row.timeSeconds.toFixed(2)}s</div>
+        </div>
+    `).join("");
+
+    $("race-again-button").style.display = isMultiplayerSession() ? "inline-block" : "none";
+}
+
 // ============ End Game ============
 function endGame(options = {}) {
     const { forcedPosition = null } = options;
@@ -990,6 +1166,21 @@ function endGame(options = {}) {
     els.finalAccuracy.textContent = `${acc.toFixed(0)}%`;
     els.finalTime.textContent = `${elapsed.toFixed(3)}s`;
     els.finalPosition.textContent = `${finalPos}${ordinal(finalPos)}`;
+
+    if (isMultiplayerSession()) {
+        state.multiplayer.localResult = {
+            name: state.username,
+            wpm,
+            accuracy: acc,
+            timeSeconds: elapsed
+        };
+
+        if (state.multiplayer.connection && state.multiplayer.connection.open) {
+            state.multiplayer.connection.send({ type: "race-result", result: state.multiplayer.localResult });
+        }
+    }
+
+    renderLeaderboard();
 
     showScreen("end");
 }
@@ -1038,6 +1229,7 @@ $("copy-lobby-code-button").addEventListener("click", async () => {
 });
 
 $("start-race-button").addEventListener("click", startGame);
+$("race-again-button").addEventListener("click", initConfigScreen);
 $("play-again-button").addEventListener("click", initHomeScreen);
 $("quit-button").addEventListener("click", quitGame);
 $("give-up-button").addEventListener("click", giveUpGame);
