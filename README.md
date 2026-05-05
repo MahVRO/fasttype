@@ -27,6 +27,7 @@ The Typing Race Game is a browser-based typing challenge inspired by TypeRacer. 
 ## Configuration Options
 - **Username**: Enter your name (defaults to "Player")
 - **Language**: English or Français
+- **Require Accents**: When enabled, accented letters must be typed exactly. When disabled, non-accented equivalents are accepted for accent-based languages.
 - **Difficulty**: Easy (slow AI), Medium, Hard (fast AI)
 - **Text Length**: Short (1-2 sentences), Medium (3-5 sentences), Long (paragraph)
 - **Enable AI Racers**: Toggle to show/hide AI opponents

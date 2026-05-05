@@ -7,6 +7,7 @@ const SUPPORTED_LANGUAGES = ["en", "fr"];
 const SUPPORTED_DIFFICULTIES = ["easy", "medium", "hard"];
 const SUPPORTED_LENGTHS = ["short", "medium", "long"];
 const TEXTS_PER_BUCKET = 100;
+const LANGUAGES_WITH_ACCENTS = ["fr"];
 
 const WORD_LISTS = {
     en: [
@@ -156,6 +157,7 @@ const TEXT_BANK = buildTextBank();
 const state = {
     username: "Player",
     language: "en",
+    strictAccents: true,
     difficulty: "medium",
     textLength: "medium",
     useRandomWords: false,
@@ -251,6 +253,7 @@ function loadConfigToState() {
         const saved = JSON.parse(raw);
         state.username = typeof saved.username === "string" && saved.username.trim() ? saved.username.trim() : state.username;
         state.language = SUPPORTED_LANGUAGES.includes(saved.language) ? saved.language : state.language;
+        state.strictAccents = typeof saved.strictAccents === "boolean" ? saved.strictAccents : state.strictAccents;
         state.difficulty = SUPPORTED_DIFFICULTIES.includes(saved.difficulty) ? saved.difficulty : state.difficulty;
         state.textLength = SUPPORTED_LENGTHS.includes(saved.textLength) ? saved.textLength : state.textLength;
         state.enableAI = typeof saved.enableAI === "boolean" ? saved.enableAI : state.enableAI;
@@ -264,6 +267,7 @@ function loadConfigToState() {
 function applyStateToConfigControls() {
     $("username").value = state.username;
     $("language").value = state.language;
+    $("strict-accents").checked = state.strictAccents;
     $("difficulty").value = state.difficulty;
     $("text-length").value = state.textLength;
     $("enable-ai").checked = state.enableAI;
@@ -272,6 +276,17 @@ function applyStateToConfigControls() {
     setActiveOptionButton("language", state.language);
     setActiveOptionButton("difficulty", state.difficulty);
     setActiveOptionButton("text-length", state.textLength);
+    updateLanguageDependentSettings();
+}
+
+function languageUsesAccents(lang) {
+    return LANGUAGES_WITH_ACCENTS.includes(lang);
+}
+
+function updateLanguageDependentSettings() {
+    const accentsToggle = $("accents-toggle");
+    const hasAccents = languageUsesAccents(state.language);
+    accentsToggle.style.display = hasAccents ? "block" : "none";
 }
 
 function setActiveOptionButton(group, value) {
@@ -283,11 +298,13 @@ function setActiveOptionButton(group, value) {
 function syncStateFromConfigControls() {
     state.username = $("username").value.trim() || "Player";
     state.language = $("language").value;
+    state.strictAccents = $("strict-accents").checked;
     state.difficulty = $("difficulty").value;
     state.textLength = $("text-length").value;
     state.enableAI = $("enable-ai").checked;
     state.enableSound = $("enable-sound").checked;
     state.useRandomWords = $("use-random-words").checked;
+    updateLanguageDependentSettings();
     persistConfig();
 }
 
@@ -296,6 +313,7 @@ function persistConfig() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
             username: state.username,
             language: state.language,
+            strictAccents: state.strictAccents,
             difficulty: state.difficulty,
             textLength: state.textLength,
             enableAI: state.enableAI,
@@ -386,8 +404,9 @@ function handleTyping(e) {
 
         for (const ch of appended) {
             const expectedChar = state.text[state.currentInput.length];
-            if (ch === expectedChar) {
-                state.currentInput += ch;
+            if (charactersMatch(ch, expectedChar)) {
+                // Store the canonical text character so progress remains aligned.
+                state.currentInput += expectedChar;
                 playTone(800, 0.03, "sine", 0.03);
             } else {
                 state.mistakes++;
@@ -418,6 +437,25 @@ function handleTyping(e) {
     if (state.currentInput === state.text) {
         endGame();
     }
+}
+
+function normalizeAccentChar(ch) {
+    return ch
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/’/g, "'")
+        .toLowerCase();
+}
+
+function charactersMatch(inputChar, expectedChar) {
+    if (inputChar === expectedChar) return true;
+
+    // When accents are not strict, accept base-letter matches (e.g. e for e acute).
+    if (languageUsesAccents(state.language) && !state.strictAccents) {
+        return normalizeAccentChar(inputChar) === normalizeAccentChar(expectedChar);
+    }
+
+    return false;
 }
 
 // ============ Render Text with Highlights ============
@@ -613,6 +651,7 @@ document.querySelectorAll(".option-btn").forEach((btn) => {
 });
 
 $("username").addEventListener("input", syncStateFromConfigControls);
+$("strict-accents").addEventListener("change", syncStateFromConfigControls);
 $("enable-ai").addEventListener("change", syncStateFromConfigControls);
 $("enable-sound").addEventListener("change", syncStateFromConfigControls);
 $("use-random-words").addEventListener("change", syncStateFromConfigControls);
