@@ -17,6 +17,31 @@ const PAGE_TEXT = {
         soloDesc: "Race against bots",
         multiplayerTitle: "Multiplayer",
         multiplayerDesc: "Race with classmates",
+        multiplayerMenuSubtitle: "Create a private lobby or join with a code",
+        createLobbyTitle: "Create lobby",
+        createLobbyDesc: "Generate a private lobby code",
+        joinLobbyTitle: "Join lobby",
+        joinLobbyDesc: "Enter a private code to join",
+        back: "Back",
+        lobbyTitle: "Lobby",
+        lobbySubtitle: "Share your code or wait for the host",
+        lobbyCodeLabel: "Lobby Code",
+        copy: "Copy",
+        copied: "Copied!",
+        lobbyStart: "Start Race",
+        leaveLobby: "Leave Lobby",
+        lobbyNotConnected: "Not connected",
+        lobbyWaitingHost: "Waiting for the host to start the race",
+        lobbyWaitingGuest: "Waiting for another player to join",
+        lobbyConnected: "Connected",
+        lobbyConnecting: "Connecting...",
+        lobbyPlayers: "Players: {count}/2",
+        lobbyPrompt: "Enter private code",
+        lobbyInvalidCode: "Please enter a valid lobby code.",
+        lobbyCreateFailed: "Unable to create lobby. Try again.",
+        lobbyJoinFailed: "Unable to join that lobby.",
+        lobbyPeerMissing: "Multiplayer is unavailable right now.",
+        lobbyStartUnavailable: "Only the host can start the race after a player joins.",
         configSubtitle: "Set your pace and race against optional rivals",
         usernameLabel: "Username",
         usernamePlaceholder: "Enter your name",
@@ -51,6 +76,31 @@ const PAGE_TEXT = {
         soloDesc: "Course contre des bots",
         multiplayerTitle: "Multijoueur",
         multiplayerDesc: "Course avec tes camarades",
+        multiplayerMenuSubtitle: "Crée un lobby privé ou rejoins-le avec un code",
+        createLobbyTitle: "Créer un lobby",
+        createLobbyDesc: "Génère un code de lobby privé",
+        joinLobbyTitle: "Rejoindre un lobby",
+        joinLobbyDesc: "Entre un code privé pour rejoindre",
+        back: "Retour",
+        lobbyTitle: "Lobby",
+        lobbySubtitle: "Partage ton code ou attends l'hôte",
+        lobbyCodeLabel: "Code du lobby",
+        copy: "Copier",
+        copied: "Copié !",
+        lobbyStart: "Lancer la course",
+        leaveLobby: "Quitter le lobby",
+        lobbyNotConnected: "Non connecté",
+        lobbyWaitingHost: "En attente du lancement par l'hôte",
+        lobbyWaitingGuest: "En attente d'un autre joueur",
+        lobbyConnected: "Connecté",
+        lobbyConnecting: "Connexion...",
+        lobbyPlayers: "Joueurs : {count}/2",
+        lobbyPrompt: "Entre le code privé",
+        lobbyInvalidCode: "Entre un code de lobby valide.",
+        lobbyCreateFailed: "Impossible de créer le lobby. Réessaie.",
+        lobbyJoinFailed: "Impossible de rejoindre ce lobby.",
+        lobbyPeerMissing: "Le multijoueur est indisponible pour le moment.",
+        lobbyStartUnavailable: "Seul l'hôte peut lancer la course après la connexion d'un joueur.",
         configSubtitle: "Règle ton rythme et cours contre des rivaux optionnels",
         usernameLabel: "Pseudo",
         usernamePlaceholder: "Entre ton nom",
@@ -249,7 +299,15 @@ const state = {
     giveUpCount: 0,
     aiSpeeds: [],         // WPM for each AI
     aiProgress: [0, 0, 0],// 0..1
-    position: 1
+    position: 1,
+    multiplayer: {
+        peer: null,
+        connection: null,
+        lobbyCode: "",
+        isHost: false,
+        connectedPlayers: 1,
+        mode: "solo"
+    }
 };
 
 const STORAGE_KEY = "typing-race-settings";
@@ -259,6 +317,8 @@ const $ = (id) => document.getElementById(id);
 
 const screens = {
     home:   $("home-screen"),
+    multiplayer: $("multiplayer-screen"),
+    lobby:  $("lobby-screen"),
     config: $("config-screen"),
     active: $("active-screen"),
     end:    $("end-screen")
@@ -278,8 +338,29 @@ const els = {
     finalAccuracy: $("final-accuracy"),
     finalTime:     $("final-time"),
     finalPosition: $("final-position"),
-    playerLabel:   $("player-label")
+    playerLabel:   $("player-label"),
+    lobbyCodeDisplay: $("lobby-code-display"),
+    lobbyStatus: $("lobby-status"),
+    lobbyPlayers: $("lobby-players"),
+    lobbyStartButton: $("lobby-start-button")
 };
+
+function getPageText() {
+    return PAGE_TEXT[state.pageLanguage] || PAGE_TEXT.en;
+}
+
+function lobbyPeerIdFromCode(code) {
+    return `fasttype-${code.toLowerCase()}`;
+}
+
+function generateLobbyCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+}
 
 // ============ Sound (using WebAudio for click/error tones) ============
 let audioCtx = null;
@@ -301,6 +382,12 @@ function playTone(freq, duration = 0.05, type = "sine", volume = 0.05) {
 // ============ Initialization ============
 function initHomeScreen() {
     showScreen("home");
+    clearInterval(state.timerInterval);
+    clearInterval(state.aiInterval);
+}
+
+function initMultiplayerScreen() {
+    showScreen("multiplayer");
     clearInterval(state.timerInterval);
     clearInterval(state.aiInterval);
 }
@@ -355,7 +442,7 @@ function applyStateToConfigControls() {
 }
 
 function applyPageLanguage() {
-    const t = PAGE_TEXT[state.pageLanguage] || PAGE_TEXT.en;
+    const t = getPageText();
     document.documentElement.lang = state.pageLanguage;
 
     $("page-language-label").textContent = t.pageLabel;
@@ -364,6 +451,19 @@ function applyPageLanguage() {
     $("solo-desc").textContent = t.soloDesc;
     $("multiplayer-title").textContent = t.multiplayerTitle;
     $("multiplayer-desc").textContent = t.multiplayerDesc;
+    $("multiplayer-menu-title").textContent = t.multiplayerTitle;
+    $("multiplayer-menu-subtitle").textContent = t.multiplayerMenuSubtitle;
+    $("create-lobby-title").textContent = t.createLobbyTitle;
+    $("create-lobby-desc").textContent = t.createLobbyDesc;
+    $("join-lobby-title").textContent = t.joinLobbyTitle;
+    $("join-lobby-desc").textContent = t.joinLobbyDesc;
+    $("back-home-button").textContent = t.back;
+    $("lobby-title").textContent = t.lobbyTitle;
+    $("lobby-subtitle").textContent = t.lobbySubtitle;
+    $("lobby-code-label").textContent = t.lobbyCodeLabel;
+    $("copy-lobby-code-button").textContent = t.copy;
+    $("lobby-start-button").textContent = t.lobbyStart;
+    $("leave-lobby-button").textContent = t.leaveLobby;
     $("config-subtitle").textContent = t.configSubtitle;
     $("username-label").textContent = t.usernameLabel;
     $("username").placeholder = t.usernamePlaceholder;
@@ -392,6 +492,46 @@ function applyPageLanguage() {
     $("result-position-label").textContent = t.statPosition;
     $("end-title").textContent = t.endTitle;
     $("play-again-button").textContent = t.playAgain;
+    renderLobbyState();
+}
+
+function resetMultiplayerState() {
+    if (state.multiplayer.connection) {
+        try { state.multiplayer.connection.close(); } catch (e) { /* ignore */ }
+    }
+    if (state.multiplayer.peer) {
+        try { state.multiplayer.peer.destroy(); } catch (e) { /* ignore */ }
+    }
+
+    state.multiplayer.peer = null;
+    state.multiplayer.connection = null;
+    state.multiplayer.lobbyCode = "";
+    state.multiplayer.isHost = false;
+    state.multiplayer.connectedPlayers = 1;
+    state.multiplayer.mode = "solo";
+}
+
+function renderLobbyState(statusKey = null) {
+    const t = getPageText();
+    els.lobbyCodeDisplay.textContent = state.multiplayer.lobbyCode || "------";
+
+    let status = t.lobbyNotConnected;
+    if (statusKey && t[statusKey]) {
+        status = t[statusKey];
+    } else if (state.multiplayer.connection && state.multiplayer.connection.open) {
+        status = t.lobbyConnected;
+    } else if (state.multiplayer.lobbyCode) {
+        status = state.multiplayer.isHost ? t.lobbyWaitingGuest : t.lobbyWaitingHost;
+    }
+
+    els.lobbyStatus.textContent = status;
+    els.lobbyPlayers.textContent = t.lobbyPlayers.replace("{count}", String(state.multiplayer.connectedPlayers));
+    els.lobbyStartButton.disabled = !(state.multiplayer.isHost && state.multiplayer.connectedPlayers > 1);
+}
+
+function openLobbyScreen(statusKey = null) {
+    showScreen("lobby");
+    renderLobbyState(statusKey);
 }
 
 function languageUsesAccents(lang) {
@@ -441,6 +581,136 @@ function persistConfig() {
     } catch (e) {
         /* ignore storage errors */
     }
+}
+
+function attachConnectionHandlers(conn) {
+    state.multiplayer.connection = conn;
+
+    conn.on("open", () => {
+        state.multiplayer.connectedPlayers = 2;
+        renderLobbyState("lobbyConnected");
+
+        if (state.multiplayer.isHost) {
+            conn.send({ type: "lobby-state", connectedPlayers: 2 });
+        }
+    });
+
+    conn.on("data", (data) => {
+        if (!data || typeof data !== "object") return;
+
+        if (data.type === "lobby-state") {
+            state.multiplayer.connectedPlayers = data.connectedPlayers || 2;
+            renderLobbyState("lobbyConnected");
+        }
+
+        if (data.type === "start-race") {
+            state.multiplayer.mode = "multiplayer";
+            initConfigScreen();
+        }
+    });
+
+    conn.on("close", () => {
+        state.multiplayer.connection = null;
+        state.multiplayer.connectedPlayers = 1;
+        renderLobbyState(state.multiplayer.isHost ? "lobbyWaitingGuest" : "lobbyNotConnected");
+    });
+
+    conn.on("error", () => {
+        state.multiplayer.connection = null;
+        state.multiplayer.connectedPlayers = 1;
+        renderLobbyState(state.multiplayer.isHost ? "lobbyWaitingGuest" : "lobbyNotConnected");
+    });
+}
+
+function createLobby() {
+    const t = getPageText();
+
+    if (typeof window.Peer === "undefined") {
+        alert(t.lobbyPeerMissing);
+        return;
+    }
+
+    resetMultiplayerState();
+    const lobbyCode = generateLobbyCode();
+    const peer = new window.Peer(lobbyPeerIdFromCode(lobbyCode));
+
+    state.multiplayer.peer = peer;
+    state.multiplayer.lobbyCode = lobbyCode;
+    state.multiplayer.isHost = true;
+    state.multiplayer.mode = "multiplayer";
+    state.multiplayer.connectedPlayers = 1;
+    openLobbyScreen("lobbyConnecting");
+
+    peer.on("open", () => {
+        renderLobbyState("lobbyWaitingGuest");
+    });
+
+    peer.on("connection", (conn) => {
+        if (state.multiplayer.connection) {
+            conn.close();
+            return;
+        }
+        attachConnectionHandlers(conn);
+    });
+
+    peer.on("error", () => {
+        resetMultiplayerState();
+        alert(t.lobbyCreateFailed);
+        initMultiplayerScreen();
+    });
+}
+
+function joinLobby() {
+    const t = getPageText();
+
+    if (typeof window.Peer === "undefined") {
+        alert(t.lobbyPeerMissing);
+        return;
+    }
+
+    const rawCode = window.prompt(t.lobbyPrompt, "");
+    const lobbyCode = rawCode ? rawCode.trim().toUpperCase() : "";
+    if (!lobbyCode) return;
+    if (!/^[A-Z0-9]{6}$/.test(lobbyCode)) {
+        alert(t.lobbyInvalidCode);
+        return;
+    }
+
+    resetMultiplayerState();
+    const peer = new window.Peer();
+    state.multiplayer.peer = peer;
+    state.multiplayer.lobbyCode = lobbyCode;
+    state.multiplayer.isHost = false;
+    state.multiplayer.mode = "multiplayer";
+    state.multiplayer.connectedPlayers = 1;
+    openLobbyScreen("lobbyConnecting");
+
+    peer.on("open", () => {
+        const conn = peer.connect(lobbyPeerIdFromCode(lobbyCode), { reliable: true });
+        attachConnectionHandlers(conn);
+    });
+
+    peer.on("error", () => {
+        resetMultiplayerState();
+        alert(t.lobbyJoinFailed);
+        initMultiplayerScreen();
+    });
+}
+
+function leaveLobby() {
+    resetMultiplayerState();
+    initMultiplayerScreen();
+}
+
+function startMultiplayerRace() {
+    const t = getPageText();
+    if (!(state.multiplayer.isHost && state.multiplayer.connection && state.multiplayer.connection.open)) {
+        alert(t.lobbyStartUnavailable);
+        return;
+    }
+
+    state.multiplayer.connection.send({ type: "start-race" });
+    initConfigScreen();
 }
 
 // ============ Start Game ============
@@ -747,10 +1017,24 @@ function quitGame() {
 
 // ============ Wire Up Events ============
 $("solo-button").addEventListener("click", initConfigScreen);
-$("multiplayer-button").addEventListener("click", () => {
-    const t = PAGE_TEXT[state.pageLanguage] || PAGE_TEXT.en;
-    alert(t.multiplayerAlert);
-    // Future: initMultiplayerScreen();
+$("multiplayer-button").addEventListener("click", initMultiplayerScreen);
+$("create-lobby-button").addEventListener("click", createLobby);
+$("join-lobby-button").addEventListener("click", joinLobby);
+$("back-home-button").addEventListener("click", initHomeScreen);
+$("leave-lobby-button").addEventListener("click", leaveLobby);
+$("lobby-start-button").addEventListener("click", startMultiplayerRace);
+$("copy-lobby-code-button").addEventListener("click", async () => {
+    const t = getPageText();
+    if (!state.multiplayer.lobbyCode) return;
+    try {
+        await navigator.clipboard.writeText(state.multiplayer.lobbyCode);
+        $("copy-lobby-code-button").textContent = t.copied;
+        setTimeout(() => {
+            $("copy-lobby-code-button").textContent = getPageText().copy;
+        }, 1200);
+    } catch (e) {
+        /* ignore clipboard errors */
+    }
 });
 
 $("start-race-button").addEventListener("click", startGame);

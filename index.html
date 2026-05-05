@@ -33,6 +33,44 @@
             </div>
         </section>
 
+        <section class="screen" id="multiplayer-screen">
+            <h1 id="multiplayer-menu-title">Multiplayer</h1>
+            <p class="subtitle" id="multiplayer-menu-subtitle">Create a private lobby or join with a code</p>
+
+            <div class="multiplayer-actions">
+                <button class="btn-mode" id="create-lobby-button">
+                    <div class="mode-title" id="create-lobby-title">Create lobby</div>
+                    <div class="mode-desc" id="create-lobby-desc">Generate a private lobby code</div>
+                </button>
+                <button class="btn-mode" id="join-lobby-button">
+                    <div class="mode-title" id="join-lobby-title">Join lobby</div>
+                    <div class="mode-desc" id="join-lobby-desc">Enter a private code to join</div>
+                </button>
+            </div>
+
+            <button class="btn-secondary" id="back-home-button">Back</button>
+        </section>
+
+        <section class="screen" id="lobby-screen">
+            <h1 id="lobby-title">Lobby</h1>
+            <p class="subtitle" id="lobby-subtitle">Share your code or wait for the host</p>
+
+            <div class="lobby-card">
+                <div class="lobby-field-label" id="lobby-code-label">Lobby Code</div>
+                <div class="lobby-code-row">
+                    <div class="lobby-code" id="lobby-code-display">------</div>
+                    <button class="btn-secondary lobby-copy-button" id="copy-lobby-code-button">Copy</button>
+                </div>
+                <div class="lobby-status" id="lobby-status">Not connected</div>
+                <div class="lobby-players" id="lobby-players">Players: 1/2</div>
+            </div>
+
+            <div class="lobby-actions-row">
+                <button class="btn-primary" id="lobby-start-button">Start Race</button>
+                <button class="btn-secondary" id="leave-lobby-button">Leave Lobby</button>
+            </div>
+        </section>
+
         <!-- ============ CONFIG SCREEN ============ -->
         <section class="screen" id="config-screen">
             <h1 id="config-title">Typing Race</h1>
@@ -167,6 +205,7 @@
         </section>
 
     </div>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

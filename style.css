@@ -108,6 +108,13 @@ h2 {
     margin: 40px 0;
 }
 
+.multiplayer-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin: 40px 0 24px;
+}
+
 .btn-mode {
     background: linear-gradient(135deg, #252f26 0%, #212921 100%);
     border: 2px solid #3f4f3d;
@@ -136,6 +143,63 @@ h2 {
 .mode-desc {
     font-size: 0.9em;
     color: #afbdab;
+}
+
+.lobby-card {
+    background: linear-gradient(160deg, #243024 0%, #1f281f 100%);
+    border: 1px solid #40513f;
+    border-radius: 16px;
+    padding: 22px;
+    margin: 28px 0 18px;
+    text-align: left;
+}
+
+.lobby-field-label {
+    color: #afbdab;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.lobby-code-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.lobby-code {
+    flex: 1;
+    min-width: 180px;
+    background-color: #182018;
+    border: 1px solid #4a5b48;
+    border-radius: 12px;
+    color: #f4f7ef;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: 4px;
+    padding: 14px 16px;
+    text-align: center;
+}
+
+.lobby-copy-button {
+    margin-top: 0;
+}
+
+.lobby-status,
+.lobby-players {
+    color: #d7e1d2;
+    margin-top: 10px;
+}
+
+.lobby-actions-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 /* ============ Screens & Transitions ============ */
@@ -519,4 +583,6 @@ h2 {
     .results-grid { grid-template-columns: 1fr; }
     .result-value { font-size: 1.5em; }
     .mode-selection { grid-template-columns: 1fr; }
+    .multiplayer-actions { grid-template-columns: 1fr; }
+    .lobby-code { width: 100%; min-width: 0; }
 }
