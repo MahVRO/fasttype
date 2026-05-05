@@ -27,11 +27,12 @@ const WORD_LISTS = {
         "coder", "logique", "idée", "projet", "avenir", "travail", "effort", "patience", "focus", "calme",
         "lecture", "livre", "musique", "énergie", "routine", "objectif", "progrès", "détail", "précision", "rythme",
         "phrase", "mot", "lettre", "erreur", "correction", "exercice", "mémoire", "habitude", "discipline", "temps",
-        "minute", "seconde", "résultat", "score", "confiance", "équipe", "partagé", "internet", "outil", "solution",
+        "minute", "seconde", "résultat", "score", "confiance", "équipe", "partage", "internet", "outil", "solution",
         "esprit", "curieux", "créatif", "inspiré", "motivation", "réussite", "défi", "simple", "complexe", "rapide",
         "lent", "fluide", "propre", "utile", "chanson", "voyage", "histoire", "culture", "langue", "français",
         "anglais", "communication", "message", "clarté", "souffle", "pause", "attention", "concentration", "gagner", "avancer",
-        "niveau", "facile", "moyen", "difficile", "départ", "arrivée", "progression", "constance", "développer", "construire"
+        "niveau", "facile", "moyen", "difficile", "départ", "arrivée", "progression", "constance", "développer", "construire",
+        "l'école", "l'élève", "d'accord", "aujourd'hui", "s'entraîne", "l'équipe", "l'attention", "d'énergie", "l'objectif", "d'habitude"
     ]
 };
 
