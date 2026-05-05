@@ -5,10 +5,11 @@ The Typing Race Game is a browser-based typing challenge inspired by TypeRacer. 
 
 ## Features
 - Pre-game configuration screen with username, difficulty, text length, and options
+- Language selector with English and French modes
 - Inline typing with real-time visual feedback (correct = green, incorrect = red, current = highlighted)
 - Live stats panel displaying WPM, accuracy percentage, timer, and position
 - Progress bar for player and animated AI progress bars
-- Randomly generated text from a large array of classic literature, modern phrases, and fun sentences
+- 100 different generated texts for each language, each difficulty, and each text length
 - Difficulty levels affecting AI speeds
 - Optional AI racers with randomized speeds
 - Optional sound effects
@@ -25,6 +26,7 @@ The Typing Race Game is a browser-based typing challenge inspired by TypeRacer. 
 
 ## Configuration Options
 - **Username**: Enter your name (defaults to "Player")
+- **Language**: English or Francais
 - **Difficulty**: Easy (slow AI), Medium, Hard (fast AI)
 - **Text Length**: Short (1-2 sentences), Medium (3-5 sentences), Long (paragraph)
 - **Enable AI Racers**: Toggle to show/hide AI opponents

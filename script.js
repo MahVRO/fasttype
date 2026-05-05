@@ -3,56 +3,158 @@
    =========================================================== */
 
 // ============ Text Library ============
-const WORD_LIST = [
-    "the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "practice", "makes",
-    "perfect", "coffee", "fuels", "coder", "night", "journey", "thousand", "miles", "begins", "single",
-    "step", "coding", "art", "telling", "computers", "early", "bird", "catches", "worm", "music",
-    "universal", "language", "mankind", "hungry", "foolish", "time", "waits", "wise", "success", "built",
-    "daily", "habit", "great", "work", "love", "found", "looking", "keep", "settle", "matter",
-    "heart", "know", "middle", "difficulty", "opportunity", "failure", "people", "realize", "close", "gave",
-    "persistence", "key", "technology", "best", "together", "internet", "connected", "billion", "mind", "global",
-    "spark", "innovation", "collaboration", "history", "reading", "exercise", "body", "book", "open", "door",
-    "world", "idea", "invent", "meet", "real", "life", "cooking", "form", "meditation", "chopping",
-    "stirring", "tasting", "focus", "present", "moment", "simple", "meal", "care", "feast", "haste"
-];
+const SUPPORTED_LANGUAGES = ["en", "fr"];
+const SUPPORTED_DIFFICULTIES = ["easy", "medium", "hard"];
+const SUPPORTED_LENGTHS = ["short", "medium", "long"];
+const TEXTS_PER_BUCKET = 100;
 
-const TEXTS = {
-    short: [
-        "The quick brown fox jumps over the lazy dog.",
-        "Practice makes perfect when you type every day.",
-        "Coffee fuels the coder through long nights.",
-        "A journey of a thousand miles begins with a single step.",
-        "Coding is the art of telling computers what to do.",
-        "The early bird catches the worm.",
-        "Music is the universal language of mankind.",
-        "Stay hungry and stay foolish.",
-        "Time waits for no one, so use it wisely.",
-        "Success is built on small daily habits."
+const WORD_LISTS = {
+    en: [
+        "the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "practice", "makes",
+        "perfect", "coffee", "fuels", "coder", "night", "journey", "thousand", "miles", "begins", "single",
+        "step", "coding", "art", "telling", "computers", "early", "bird", "catches", "worm", "music",
+        "universal", "language", "mankind", "hungry", "foolish", "time", "waits", "wise", "success", "built",
+        "daily", "habit", "great", "work", "love", "found", "looking", "keep", "settle", "matter",
+        "heart", "know", "middle", "difficulty", "opportunity", "failure", "people", "realize", "close", "gave",
+        "persistence", "key", "technology", "best", "together", "internet", "connected", "billion", "mind", "global",
+        "spark", "innovation", "collaboration", "history", "reading", "exercise", "body", "book", "open", "door",
+        "world", "idea", "invent", "meet", "real", "life", "cooking", "form", "meditation", "chopping",
+        "stirring", "tasting", "focus", "present", "moment", "simple", "meal", "care", "feast", "haste"
     ],
-    medium: [
-        "The only way to do great work is to love what you do. If you have not found it yet, keep looking. Do not settle. As with all matters of the heart, you will know when you find it.",
-        "In the middle of difficulty lies opportunity. Many of life's failures are people who did not realize how close they were to success when they gave up. Persistence is the key.",
-        "Technology is best when it brings people together. The internet has connected billions of minds across the globe, sparking innovation and collaboration like never before in history.",
-        "Reading is to the mind what exercise is to the body. Books open doors to worlds we may never visit, ideas we may never invent, and people we may never meet in real life.",
-        "Cooking is a form of meditation. The chopping, stirring, and tasting bring focus to the present moment. A simple meal made with care is better than a feast made in haste.",
-        "Music has the power to transport us instantly to another place and time. A single melody can summon memories long forgotten and emotions we did not know we still carried.",
-        "Travel is the only thing you buy that makes you richer. Every new city teaches a lesson, every conversation broadens a perspective, every meal tells a story of its people.",
-        "Kindness costs nothing but means everything. A small smile, a kind word, or a helping hand can change someone's entire day. Choose to be kind whenever you have the choice.",
-        "The best way to predict the future is to create it. Stop waiting for the perfect moment and start building toward your goals one small action at a time, today.",
-        "Learning never exhausts the mind. Every skill you master, every book you read, every problem you solve adds to a foundation that no one can ever take away from you."
-    ],
-    long: [
-        "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of light, it was the season of darkness, it was the spring of hope, it was the winter of despair. We had everything before us, we had nothing before us, we were all going direct to heaven, we were all going direct the other way.",
-        "Call me Ishmael. Some years ago, never mind how long precisely, having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth, I account it high time to get to sea as soon as I can.",
-        "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters in the area.",
-        "All happy families are alike; each unhappy family is unhappy in its own way. Everything was in confusion in the household. The members of the family no longer met together, and the children ran wild all over the house. The cook had given warning the day before, and even the staff were on bad terms among themselves and had asked for new positions elsewhere.",
-        "The future belongs to those who believe in the beauty of their dreams. Every great achievement was once considered impossible by someone who lacked vision. The history of progress is the history of stubborn dreamers who refused to accept the limits placed upon them. Build your dream brick by brick, day by day, and one morning you will wake up to find that you have built something remarkable that inspires others."
+    fr: [
+        "le", "renard", "brun", "rapide", "saute", "par", "dessus", "chien", "paresseux", "pratique",
+        "rend", "meilleur", "clavier", "vitesse", "texte", "course", "ecole", "classe", "amis", "apprendre",
+        "coder", "logique", "idee", "projet", "avenir", "travail", "effort", "patience", "focus", "calme",
+        "lecture", "livre", "musique", "energie", "routine", "objectif", "progres", "detail", "precision", "rythme",
+        "phrase", "mot", "lettre", "erreur", "correction", "exercice", "memoire", "habitude", "discipline", "temps",
+        "minute", "seconde", "resultat", "score", "confiance", "equipe", "partage", "internet", "outil", "solution",
+        "esprit", "curieux", "creatif", "inspire", "motivation", "reussite", "defi", "simple", "complexe", "rapide",
+        "lent", "fluide", "propre", "utile", "chanson", "voyage", "histoire", "culture", "langue", "francais",
+        "anglais", "communication", "message", "clarte", "souffle", "pause", "attention", "concentration", "gagner", "avancer",
+        "niveau", "facile", "moyen", "difficile", "depart", "arrivee", "progression", "constance", "developper", "construire"
     ]
 };
+
+const BANK_TEMPLATES = {
+    en: {
+        easy: {
+            subjects: ["The student", "Our team", "The player", "A beginner", "The runner", "My friend", "The class", "This coder", "The teacher", "A learner"],
+            verbs: ["types", "reads", "builds", "writes", "checks", "reviews", "trains", "keeps", "solves", "follows"],
+            objects: ["short words", "simple lines", "daily goals", "clean notes", "basic drills", "clear prompts", "small tasks", "steady rhythm", "quick ideas", "tiny wins"],
+            tails: ["with calm focus", "before lunch", "every morning", "in one minute", "with no stress", "at school", "after class", "with good form", "for better speed", "with strong accuracy"]
+        },
+        medium: {
+            starts: ["Typing with consistency", "Focused practice", "A smart routine", "Daily repetition", "Clear feedback", "Careful correction", "Sustained attention", "Steady progress", "Balanced effort", "Intentional training"],
+            middles: ["improves both speed and confidence", "builds durable keyboard memory", "helps each mistake become a lesson", "turns weak spots into reliable habits", "makes race results more predictable", "supports cleaner and faster inputs", "reduces hesitation on complex lines", "keeps performance stable under pressure", "raises quality without rushing", "creates strong momentum over time"],
+            ends: ["when goals stay realistic and clear", "because small wins compound quickly", "if every session has a purpose", "when feedback is used right away", "as long as effort remains consistent", "if the player keeps breathing calmly", "when accuracy leads before speed", "if progress is tracked each day", "as confidence grows from repetition", "when the challenge level matches skill"]
+        },
+        hard: {
+            openings: ["Although the race appears simple", "When pressure rises in the final stretch", "Because advanced typing rewards precision", "While competitors chase raw speed", "As the text becomes more demanding", "Since difficult passages expose weak habits", "Even when the timer feels unforgiving", "If a player wants elite consistency", "Whenever attention starts to drift", "As strategic pacing replaces panic"],
+            pivots: ["careful rhythm control still determines the outcome", "micro corrections prevent larger breakdowns", "intentional breathing protects long term focus", "disciplined input timing outperforms random bursts", "structured repetition stabilizes complex patterns", "error awareness improves every split decision", "composure under stress creates measurable gains", "clarity in movement keeps accuracy intact", "technical patience unlocks sustainable speed", "small adjustments compound into strong finishes"],
+            closings: ["so the best result comes from precision first and acceleration second", "which is why steady execution beats chaotic typing in most runs", "therefore each session should reward control before risky aggression", "and that is where experienced players gain an edge over impatient rivals", "so improvement depends on systems, not luck or sudden bursts", "which proves that disciplined mechanics can carry the hardest passages", "therefore long term consistency matters more than a single fast start", "and this is exactly why deliberate practice remains the winning approach", "so high level performance emerges from repeatable habits and clear review", "which turns difficult text into a manageable and winnable sequence"]
+        }
+    },
+    fr: {
+        easy: {
+            subjects: ["L eleve", "Notre equipe", "Le joueur", "Un debutant", "Le coureur", "Mon ami", "La classe", "Ce codeur", "Le prof", "Un apprenant"],
+            verbs: ["tape", "lit", "construit", "ecrit", "verifie", "observe", "s entraine", "garde", "corrige", "suivit"],
+            objects: ["des mots courts", "des lignes simples", "des objectifs du jour", "des notes claires", "des exercices faciles", "des consignes nettes", "de petites taches", "un rythme stable", "des idees rapides", "de petits progres"],
+            tails: ["avec calme", "avant midi", "chaque matin", "en une minute", "sans stress", "a l ecole", "apres le cours", "avec precision", "pour aller plus vite", "avec bonne justesse"]
+        },
+        medium: {
+            starts: ["Taper avec regularite", "Une pratique concentree", "Une routine utile", "La repetition quotidienne", "Un retour clair", "Une correction rapide", "Une attention stable", "Un progres constant", "Un effort equilibre", "Un entrainement intentionnel"],
+            middles: ["ameliore la vitesse et la confiance", "construit une memoire clavier solide", "transforme chaque erreur en lecon", "renforce les habitudes utiles", "rend les resultats plus stables", "donne des saisies plus propres", "diminue l hesitation sur les passages longs", "garde la performance sous pression", "augmente la qualite sans se precipiter", "cree un bon elan sur la duree"],
+            ends: ["quand les objectifs restent clairs", "car les petits gains se cumulent", "si chaque session a un but", "quand le retour est applique tout de suite", "tant que l effort reste constant", "si le joueur respire calmement", "quand la precision passe avant la vitesse", "si le suivi est fait chaque jour", "quand la confiance monte avec la repetition", "si le niveau du defi reste adapte"]
+        },
+        hard: {
+            openings: ["Meme si la course semble simple", "Quand la pression monte a la fin", "Parce que la frappe avancee demande precision", "Pendant que les rivaux cherchent la vitesse brute", "Quand le texte devient exigeant", "Comme les passages difficiles revelent les faiblesses", "Meme si le chrono parait severe", "Si un joueur veut une constance elite", "Chaque fois que l attention baisse", "Quand la strategie remplace la panique"],
+            pivots: ["le controle du rythme decide encore le resultat", "les micro corrections evitent de grosses erreurs", "une respiration volontaire protege la concentration", "un timing propre depasse les accelerations au hasard", "la repetition structuree stabilise les motifs complexes", "la lecture des erreurs ameliore chaque decision", "le calme sous pression cree des gains visibles", "la clarte du geste maintient la precision", "la patience technique ouvre une vitesse durable", "de petits ajustements produisent de grandes fins"],
+            closings: ["donc le meilleur score vient de la precision avant l acceleration", "c est pourquoi une execution stable bat souvent un style chaotique", "ainsi chaque session doit valoriser le controle avant le risque", "et c est la que les joueurs experimentes prennent l avantage", "donc le progres depend d un systeme et non de la chance", "ce qui montre que la discipline porte les passages les plus durs", "ainsi la constance compte plus qu un depart trop rapide", "et voila pourquoi la pratique deliberate reste gagnante", "donc la performance elevee vient d habitudes repetables", "ce qui rend meme un texte dur plus gerable"]
+        }
+    }
+};
+
+function pick(arr, i, jump) {
+    return arr[(i * jump + jump) % arr.length];
+}
+
+function buildText(lang, difficulty, textLength, index) {
+    const tpl = BANK_TEMPLATES[lang][difficulty];
+    const serial = index + 1;
+
+    if (difficulty === "easy") {
+        const clauses = {
+            short: 1,
+            medium: 2,
+            long: 3
+        };
+        const parts = [];
+        for (let i = 0; i < clauses[textLength]; i++) {
+            const k = index * 3 + i;
+            if (lang === "en") {
+                parts.push(`${pick(tpl.subjects, k, 3)} ${pick(tpl.verbs, k, 5)} ${pick(tpl.objects, k, 7)} ${pick(tpl.tails, k, 9)}.`);
+            } else {
+                parts.push(`${pick(tpl.subjects, k, 3)} ${pick(tpl.verbs, k, 5)} ${pick(tpl.objects, k, 7)} ${pick(tpl.tails, k, 9)}.`);
+            }
+        }
+        parts.push(lang === "en" ? `Training text ${serial}.` : `Texte d entrainement ${serial}.`);
+        return parts.join(" ");
+    }
+
+    if (difficulty === "medium") {
+        const clauses = {
+            short: 1,
+            medium: 2,
+            long: 3
+        };
+        const parts = [];
+        for (let i = 0; i < clauses[textLength]; i++) {
+            const k = index * 4 + i;
+            parts.push(`${pick(tpl.starts, k, 3)} ${pick(tpl.middles, k, 5)} ${pick(tpl.ends, k, 7)}.`);
+        }
+        parts.push(lang === "en" ? `Session ${serial}.` : `Session ${serial}.`);
+        return parts.join(" ");
+    }
+
+    const clauses = {
+        short: 1,
+        medium: 2,
+        long: 3
+    };
+    const parts = [];
+    for (let i = 0; i < clauses[textLength]; i++) {
+        const k = index * 5 + i;
+        parts.push(`${pick(tpl.openings, k, 3)}, ${pick(tpl.pivots, k, 5)}, ${pick(tpl.closings, k, 7)}.`);
+    }
+    parts.push(lang === "en" ? `Advanced passage ${serial}.` : `Passage avance ${serial}.`);
+    return parts.join(" ");
+}
+
+function buildTextBank() {
+    const bank = {};
+
+    SUPPORTED_LANGUAGES.forEach((lang) => {
+        bank[lang] = {};
+        SUPPORTED_DIFFICULTIES.forEach((difficulty) => {
+            bank[lang][difficulty] = {};
+            SUPPORTED_LENGTHS.forEach((textLength) => {
+                bank[lang][difficulty][textLength] = [];
+                for (let i = 0; i < TEXTS_PER_BUCKET; i++) {
+                    bank[lang][difficulty][textLength].push(buildText(lang, difficulty, textLength, i));
+                }
+            });
+        });
+    });
+
+    return bank;
+}
+
+const TEXT_BANK = buildTextBank();
 
 // ============ Game State ============
 const state = {
     username: "Player",
+    language: "en",
     difficulty: "medium",
     textLength: "medium",
     useRandomWords: false,
@@ -147,8 +249,9 @@ function loadConfigToState() {
         if (!raw) return;
         const saved = JSON.parse(raw);
         state.username = typeof saved.username === "string" && saved.username.trim() ? saved.username.trim() : state.username;
-        state.difficulty = ["easy", "medium", "hard"].includes(saved.difficulty) ? saved.difficulty : state.difficulty;
-        state.textLength = ["short", "medium", "long"].includes(saved.textLength) ? saved.textLength : state.textLength;
+        state.language = SUPPORTED_LANGUAGES.includes(saved.language) ? saved.language : state.language;
+        state.difficulty = SUPPORTED_DIFFICULTIES.includes(saved.difficulty) ? saved.difficulty : state.difficulty;
+        state.textLength = SUPPORTED_LENGTHS.includes(saved.textLength) ? saved.textLength : state.textLength;
         state.enableAI = typeof saved.enableAI === "boolean" ? saved.enableAI : state.enableAI;
         state.enableSound = typeof saved.enableSound === "boolean" ? saved.enableSound : state.enableSound;
         state.useRandomWords = typeof saved.useRandomWords === "boolean" ? saved.useRandomWords : state.useRandomWords;
@@ -159,11 +262,13 @@ function loadConfigToState() {
 
 function applyStateToConfigControls() {
     $("username").value = state.username;
+    $("language").value = state.language;
     $("difficulty").value = state.difficulty;
     $("text-length").value = state.textLength;
     $("enable-ai").checked = state.enableAI;
     $("enable-sound").checked = state.enableSound;
     $("use-random-words").checked = state.useRandomWords;
+    setActiveOptionButton("language", state.language);
     setActiveOptionButton("difficulty", state.difficulty);
     setActiveOptionButton("text-length", state.textLength);
 }
@@ -176,6 +281,7 @@ function setActiveOptionButton(group, value) {
 
 function syncStateFromConfigControls() {
     state.username = $("username").value.trim() || "Player";
+    state.language = $("language").value;
     state.difficulty = $("difficulty").value;
     state.textLength = $("text-length").value;
     state.enableAI = $("enable-ai").checked;
@@ -188,6 +294,7 @@ function persistConfig() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
             username: state.username,
+            language: state.language,
             difficulty: state.difficulty,
             textLength: state.textLength,
             enableAI: state.enableAI,
@@ -201,9 +308,10 @@ function persistConfig() {
 
 // ============ Start Game ============
 function generateRandomWordText(wordCount) {
+    const words = WORD_LISTS[state.language] || WORD_LISTS.en;
     let text = "";
     for (let i = 0; i < wordCount; i++) {
-        text += WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)] + " ";
+        text += words[Math.floor(Math.random() * words.length)] + " ";
     }
     return text.trim();
 }
@@ -220,7 +328,7 @@ function startGame() {
         };
         state.text = generateRandomWordText(wordCounts[state.textLength]);
     } else {
-        const pool = TEXTS[state.textLength];
+        const pool = TEXT_BANK[state.language][state.difficulty][state.textLength];
         state.text = pool[Math.floor(Math.random() * pool.length)];
     }
 
