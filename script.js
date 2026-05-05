@@ -9,6 +9,77 @@ const SUPPORTED_LENGTHS = ["short", "medium", "long"];
 const TEXTS_PER_BUCKET = 100;
 const LANGUAGES_WITH_ACCENTS = ["fr"];
 
+const PAGE_TEXT = {
+    en: {
+        pageLabel: "Page",
+        homeSubtitle: "Choose your racing mode",
+        soloTitle: "Solo",
+        soloDesc: "Race against bots",
+        multiplayerTitle: "Multiplayer",
+        multiplayerDesc: "Race with classmates",
+        configSubtitle: "Set your pace and race against optional rivals",
+        usernameLabel: "Username",
+        usernamePlaceholder: "Enter your name",
+        gameLanguageLabel: "Language",
+        gameLanguageEn: "English",
+        difficultyLabel: "Difficulty",
+        difficultyEasy: "Easy",
+        difficultyMedium: "Medium",
+        difficultyHard: "Hard",
+        textLengthLabel: "Text Length",
+        textLengthShort: "Short",
+        textLengthMedium: "Medium",
+        textLengthLong: "Long",
+        strictAccentsLabel: "Require Accents",
+        enableAiLabel: "Enable Bot Racers",
+        enableSoundLabel: "Sound Effects",
+        randomWordsLabel: "Random Words",
+        startRace: "Start Race",
+        giveUp: "Give Up",
+        quitRace: "Quit Race",
+        statAccuracy: "Accuracy",
+        statTime: "Time",
+        statPosition: "Position",
+        endTitle: "Race Complete!",
+        playAgain: "Play Again",
+        multiplayerAlert: "Multiplayer mode coming soon!"
+    },
+    fr: {
+        pageLabel: "Page",
+        homeSubtitle: "Choisis ton mode de course",
+        soloTitle: "Solo",
+        soloDesc: "Course contre des bots",
+        multiplayerTitle: "Multijoueur",
+        multiplayerDesc: "Course avec tes camarades",
+        configSubtitle: "Règle ton rythme et cours contre des rivaux optionnels",
+        usernameLabel: "Pseudo",
+        usernamePlaceholder: "Entre ton nom",
+        gameLanguageLabel: "Langue du jeu",
+        gameLanguageEn: "Anglais",
+        difficultyLabel: "Difficulté",
+        difficultyEasy: "Facile",
+        difficultyMedium: "Moyen",
+        difficultyHard: "Difficile",
+        textLengthLabel: "Longueur du texte",
+        textLengthShort: "Court",
+        textLengthMedium: "Moyen",
+        textLengthLong: "Long",
+        strictAccentsLabel: "Exiger les accents",
+        enableAiLabel: "Activer les bots",
+        enableSoundLabel: "Effets sonores",
+        randomWordsLabel: "Mots aléatoires",
+        startRace: "Lancer la course",
+        giveUp: "Abandonner",
+        quitRace: "Quitter",
+        statAccuracy: "Précision",
+        statTime: "Temps",
+        statPosition: "Position",
+        endTitle: "Course terminée !",
+        playAgain: "Rejouer",
+        multiplayerAlert: "Le mode multijoueur arrive bientôt !"
+    }
+};
+
 const WORD_LISTS = {
     en: [
         "the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "practice", "makes",
@@ -156,6 +227,7 @@ const TEXT_BANK = buildTextBank();
 // ============ Game State ============
 const state = {
     username: "Player",
+    pageLanguage: "en",
     language: "en",
     strictAccents: true,
     difficulty: "medium",
@@ -252,6 +324,7 @@ function loadConfigToState() {
         if (!raw) return;
         const saved = JSON.parse(raw);
         state.username = typeof saved.username === "string" && saved.username.trim() ? saved.username.trim() : state.username;
+        state.pageLanguage = SUPPORTED_LANGUAGES.includes(saved.pageLanguage) ? saved.pageLanguage : state.pageLanguage;
         state.language = SUPPORTED_LANGUAGES.includes(saved.language) ? saved.language : state.language;
         state.strictAccents = typeof saved.strictAccents === "boolean" ? saved.strictAccents : state.strictAccents;
         state.difficulty = SUPPORTED_DIFFICULTIES.includes(saved.difficulty) ? saved.difficulty : state.difficulty;
@@ -266,6 +339,7 @@ function loadConfigToState() {
 
 function applyStateToConfigControls() {
     $("username").value = state.username;
+    $("page-language").value = state.pageLanguage;
     $("language").value = state.language;
     $("strict-accents").checked = state.strictAccents;
     $("difficulty").value = state.difficulty;
@@ -276,7 +350,48 @@ function applyStateToConfigControls() {
     setActiveOptionButton("language", state.language);
     setActiveOptionButton("difficulty", state.difficulty);
     setActiveOptionButton("text-length", state.textLength);
+    applyPageLanguage();
     updateLanguageDependentSettings();
+}
+
+function applyPageLanguage() {
+    const t = PAGE_TEXT[state.pageLanguage] || PAGE_TEXT.en;
+    document.documentElement.lang = state.pageLanguage;
+
+    $("page-language-label").textContent = t.pageLabel;
+    $("home-subtitle").textContent = t.homeSubtitle;
+    $("solo-title").textContent = t.soloTitle;
+    $("solo-desc").textContent = t.soloDesc;
+    $("multiplayer-title").textContent = t.multiplayerTitle;
+    $("multiplayer-desc").textContent = t.multiplayerDesc;
+    $("config-subtitle").textContent = t.configSubtitle;
+    $("username-label").textContent = t.usernameLabel;
+    $("username").placeholder = t.usernamePlaceholder;
+    $("game-language-label").textContent = t.gameLanguageLabel;
+    $("game-language-en").textContent = t.gameLanguageEn;
+    $("difficulty-label").textContent = t.difficultyLabel;
+    $("difficulty-easy").textContent = t.difficultyEasy;
+    $("difficulty-medium").textContent = t.difficultyMedium;
+    $("difficulty-hard").textContent = t.difficultyHard;
+    $("text-length-label").textContent = t.textLengthLabel;
+    $("text-length-short").textContent = t.textLengthShort;
+    $("text-length-medium").textContent = t.textLengthMedium;
+    $("text-length-long").textContent = t.textLengthLong;
+    $("strict-accents-label").textContent = t.strictAccentsLabel;
+    $("enable-ai-label").textContent = t.enableAiLabel;
+    $("enable-sound-label").textContent = t.enableSoundLabel;
+    $("use-random-words-label").textContent = t.randomWordsLabel;
+    $("start-race-button").textContent = t.startRace;
+    $("give-up-button").textContent = t.giveUp;
+    $("quit-button").textContent = t.quitRace;
+    $("stat-accuracy-label").textContent = t.statAccuracy;
+    $("stat-time-label").textContent = t.statTime;
+    $("stat-position-label").textContent = t.statPosition;
+    $("result-accuracy-label").textContent = t.statAccuracy;
+    $("result-time-label").textContent = t.statTime;
+    $("result-position-label").textContent = t.statPosition;
+    $("end-title").textContent = t.endTitle;
+    $("play-again-button").textContent = t.playAgain;
 }
 
 function languageUsesAccents(lang) {
@@ -297,6 +412,7 @@ function setActiveOptionButton(group, value) {
 
 function syncStateFromConfigControls() {
     state.username = $("username").value.trim() || "Player";
+    state.pageLanguage = $("page-language").value;
     state.language = $("language").value;
     state.strictAccents = $("strict-accents").checked;
     state.difficulty = $("difficulty").value;
@@ -304,6 +420,7 @@ function syncStateFromConfigControls() {
     state.enableAI = $("enable-ai").checked;
     state.enableSound = $("enable-sound").checked;
     state.useRandomWords = $("use-random-words").checked;
+    applyPageLanguage();
     updateLanguageDependentSettings();
     persistConfig();
 }
@@ -312,6 +429,7 @@ function persistConfig() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
             username: state.username,
+            pageLanguage: state.pageLanguage,
             language: state.language,
             strictAccents: state.strictAccents,
             difficulty: state.difficulty,
@@ -630,7 +748,8 @@ function quitGame() {
 // ============ Wire Up Events ============
 $("solo-button").addEventListener("click", initConfigScreen);
 $("multiplayer-button").addEventListener("click", () => {
-    alert("Multiplayer mode coming soon!");
+    const t = PAGE_TEXT[state.pageLanguage] || PAGE_TEXT.en;
+    alert(t.multiplayerAlert);
     // Future: initMultiplayerScreen();
 });
 
@@ -639,6 +758,8 @@ $("play-again-button").addEventListener("click", initHomeScreen);
 $("quit-button").addEventListener("click", quitGame);
 $("give-up-button").addEventListener("click", giveUpGame);
 els.typingInput.addEventListener("input", handleTyping);
+
+$("page-language").addEventListener("change", syncStateFromConfigControls);
 
 document.querySelectorAll(".option-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -671,4 +792,6 @@ els.typingInput.addEventListener("blur",  () => els.textDisplay.classList.remove
 els.typingInput.addEventListener("paste", e => e.preventDefault());
 
 // Boot
+loadConfigToState();
+applyStateToConfigControls();
 initHomeScreen();

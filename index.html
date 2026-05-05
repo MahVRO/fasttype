@@ -8,59 +8,66 @@
 </head>
 <body>
     <div class="container">
+        <div class="page-language-switcher">
+            <label for="page-language" id="page-language-label">Page</label>
+            <select id="page-language" aria-label="Page language">
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
+            </select>
+        </div>
 
         <!-- ============ HOME SCREEN ============ -->
         <section class="screen active" id="home-screen">
-            <h1>Typing Race</h1>
-            <p class="subtitle">Choose your racing mode</p>
+            <h1 id="home-title">Typing Race</h1>
+            <p class="subtitle" id="home-subtitle">Choose your racing mode</p>
             
             <div class="mode-selection">
                 <button class="btn-mode" id="solo-button">
-                    <div class="mode-title">Solo</div>
-                    <div class="mode-desc">Race against bots</div>
+                    <div class="mode-title" id="solo-title">Solo</div>
+                    <div class="mode-desc" id="solo-desc">Race against bots</div>
                 </button>
                 <button class="btn-mode" id="multiplayer-button">
-                    <div class="mode-title">Multiplayer</div>
-                    <div class="mode-desc">Race with classmates</div>
+                    <div class="mode-title" id="multiplayer-title">Multiplayer</div>
+                    <div class="mode-desc" id="multiplayer-desc">Race with classmates</div>
                 </button>
             </div>
         </section>
 
         <!-- ============ CONFIG SCREEN ============ -->
         <section class="screen" id="config-screen">
-            <h1>Typing Race</h1>
-            <p class="subtitle">Set your pace and race against optional rivals</p>
+            <h1 id="config-title">Typing Race</h1>
+            <p class="subtitle" id="config-subtitle">Set your pace and race against optional rivals</p>
 
             <div class="config-section">
-                <label for="username">Username</label>
+                <label for="username" id="username-label">Username</label>
                 <input type="text" id="username" placeholder="Enter your name" value="Player" maxlength="20">
             </div>
 
             <div class="config-section">
-                <label>Language</label>
+                <label id="game-language-label">Language</label>
                 <div class="option-row" id="language-options" role="group" aria-label="Language">
-                    <button type="button" class="option-btn active" data-group="language" data-value="en">English</button>
-                    <button type="button" class="option-btn" data-group="language" data-value="fr">Français</button>
+                    <button type="button" class="option-btn active" data-group="language" data-value="en" id="game-language-en">English</button>
+                    <button type="button" class="option-btn" data-group="language" data-value="fr" id="game-language-fr">Français</button>
                 </div>
                 <input type="hidden" id="language" value="en">
             </div>
 
             <div class="config-section">
-                <label>Difficulty</label>
+                <label id="difficulty-label">Difficulty</label>
                 <div class="option-row" id="difficulty-options" role="group" aria-label="Difficulty">
-                    <button type="button" class="option-btn" data-group="difficulty" data-value="easy">Easy</button>
-                    <button type="button" class="option-btn active" data-group="difficulty" data-value="medium">Medium</button>
-                    <button type="button" class="option-btn" data-group="difficulty" data-value="hard">Hard</button>
+                    <button type="button" class="option-btn" data-group="difficulty" data-value="easy" id="difficulty-easy">Easy</button>
+                    <button type="button" class="option-btn active" data-group="difficulty" data-value="medium" id="difficulty-medium">Medium</button>
+                    <button type="button" class="option-btn" data-group="difficulty" data-value="hard" id="difficulty-hard">Hard</button>
                 </div>
                 <input type="hidden" id="difficulty" value="medium">
             </div>
 
             <div class="config-section">
-                <label>Text Length</label>
+                <label id="text-length-label">Text Length</label>
                 <div class="option-row" id="text-length-options" role="group" aria-label="Text length">
-                    <button type="button" class="option-btn" data-group="text-length" data-value="short">Short</button>
-                    <button type="button" class="option-btn active" data-group="text-length" data-value="medium">Medium</button>
-                    <button type="button" class="option-btn" data-group="text-length" data-value="long">Long</button>
+                    <button type="button" class="option-btn" data-group="text-length" data-value="short" id="text-length-short">Short</button>
+                    <button type="button" class="option-btn active" data-group="text-length" data-value="medium" id="text-length-medium">Medium</button>
+                    <button type="button" class="option-btn" data-group="text-length" data-value="long" id="text-length-long">Long</button>
                 </div>
                 <input type="hidden" id="text-length" value="medium">
             </div>
@@ -68,19 +75,19 @@
             <div class="toggle-row">
                 <label class="toggle" id="accents-toggle">
                     <input type="checkbox" id="strict-accents" checked>
-                    <span>Require Accents</span>
+                    <span id="strict-accents-label">Require Accents</span>
                 </label>
                 <label class="toggle">
                     <input type="checkbox" id="enable-ai" checked>
-                    <span>Enable Bot Racers</span>
+                    <span id="enable-ai-label">Enable Bot Racers</span>
                 </label>
                 <label class="toggle">
                     <input type="checkbox" id="enable-sound">
-                    <span>Sound Effects</span>
+                    <span id="enable-sound-label">Sound Effects</span>
                 </label>
                 <label class="toggle">
                     <input type="checkbox" id="use-random-words">
-                    <span>Random Words</span>
+                    <span id="use-random-words-label">Random Words</span>
                 </label>
             </div>
 
@@ -95,10 +102,10 @@
             </div>
 
             <div class="stats-panel">
-                <div class="stat"><span class="stat-label">WPM</span><span class="stat-value" id="wpm">0</span></div>
-                <div class="stat"><span class="stat-label">Accuracy</span><span class="stat-value" id="accuracy">100%</span></div>
-                <div class="stat"><span class="stat-label">Time</span><span class="stat-value" id="timer">0.000s</span></div>
-                <div class="stat"><span class="stat-label">Position</span><span class="stat-value" id="position">1st</span></div>
+                <div class="stat"><span class="stat-label" id="stat-wpm-label">WPM</span><span class="stat-value" id="wpm">0</span></div>
+                <div class="stat"><span class="stat-label" id="stat-accuracy-label">Accuracy</span><span class="stat-value" id="accuracy">100%</span></div>
+                <div class="stat"><span class="stat-label" id="stat-time-label">Time</span><span class="stat-value" id="timer">0.000s</span></div>
+                <div class="stat"><span class="stat-label" id="stat-position-label">Position</span><span class="stat-value" id="position">1st</span></div>
             </div>
 
             <div class="text-to-type" id="text-display" tabindex="0"></div>
@@ -137,22 +144,22 @@
 
         <!-- ============ END SCREEN ============ -->
         <section class="screen" id="end-screen">
-            <h2>Race Complete!</h2>
+            <h2 id="end-title">Race Complete!</h2>
             <div class="results-grid">
                 <div class="result-card">
-                    <span class="result-label">WPM</span>
+                    <span class="result-label" id="result-wpm-label">WPM</span>
                     <span class="result-value" id="final-wpm">0</span>
                 </div>
                 <div class="result-card">
-                    <span class="result-label">Accuracy</span>
+                    <span class="result-label" id="result-accuracy-label">Accuracy</span>
                     <span class="result-value" id="final-accuracy">0%</span>
                 </div>
                 <div class="result-card">
-                    <span class="result-label">Time</span>
+                    <span class="result-label" id="result-time-label">Time</span>
                     <span class="result-value" id="final-time">0.000s</span>
                 </div>
                 <div class="result-card">
-                    <span class="result-label">Position</span>
+                    <span class="result-label" id="result-position-label">Position</span>
                     <span class="result-value" id="final-position">-</span>
                 </div>
             </div>
