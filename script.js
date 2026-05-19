@@ -333,9 +333,14 @@ const state = {
         isHost: false,
         connectedPlayers: 1,
         rosterBroadcastTimer: null,
+        lobbyAnimTimer: null,
         mode: "solo",
         players: {},
         results: {},
+        progress: {},
+        lastProgressSentAt: 0,
+        recentLeaves: [],
+        lastRenderedPlayers: {},
         raceConfig: null
     }
 };
@@ -370,6 +375,7 @@ const els = {
     finalTime:     $("final-time"),
     finalPosition: $("final-position"),
     playerLabel:   $("player-label"),
+    multiplayerRacers: $("multiplayer-racers"),
     leaderboardList: $("leaderboard-list"),
     lobbyCodeDisplay: $("lobby-code-display"),
     lobbyStatus: $("lobby-status"),
@@ -576,9 +582,17 @@ function resetMultiplayerState() {
         clearTimeout(state.multiplayer.rosterBroadcastTimer);
     }
     state.multiplayer.rosterBroadcastTimer = null;
+    if (state.multiplayer.lobbyAnimTimer) {
+        clearTimeout(state.multiplayer.lobbyAnimTimer);
+    }
+    state.multiplayer.lobbyAnimTimer = null;
     state.multiplayer.mode = "solo";
     state.multiplayer.players = {};
     state.multiplayer.results = {};
+    state.multiplayer.progress = {};
+    state.multiplayer.lastProgressSentAt = 0;
+    state.multiplayer.recentLeaves = [];
+    state.multiplayer.lastRenderedPlayers = {};
     state.multiplayer.raceConfig = null;
     state.renderedChars = [];
 }
@@ -603,12 +617,46 @@ function renderLobbyState(statusKey = null) {
         return a[1].name.localeCompare(b[1].name);
     });
 
+    const previousPlayers = state.multiplayer.lastRenderedPlayers || {};
+    const joinedIds = new Set(sortedEntries.map(([id]) => id).filter((id) => !previousPlayers[id]));
+    const leftEntries = Object.entries(previousPlayers).filter(([id]) => !state.multiplayer.players[id]);
+
+    if (leftEntries.length) {
+        state.multiplayer.recentLeaves = leftEntries.map(([id, p]) => ({ id, name: p.name }));
+        if (state.multiplayer.lobbyAnimTimer) {
+            clearTimeout(state.multiplayer.lobbyAnimTimer);
+        }
+        state.multiplayer.lobbyAnimTimer = setTimeout(() => {
+            state.multiplayer.recentLeaves = [];
+            state.multiplayer.lobbyAnimTimer = null;
+            renderLobbyState();
+        }, 700);
+    }
+
     state.multiplayer.connectedPlayers = sortedEntries.length || 1;
     els.lobbyStatus.textContent = status;
     els.lobbyPlayers.textContent = t.lobbyPlayers.replace("{count}", String(state.multiplayer.connectedPlayers));
     els.lobbyPlayerList.innerHTML = sortedEntries.length
-        ? sortedEntries.map(([id, p]) => `<div class="lobby-player-item">${escapeHtml(p.name)}${p.isHost ? " (Host)" : ""}</div>`).join("")
+        ? sortedEntries.map(([id, p]) => {
+            const chips = [];
+            if (id === state.multiplayer.selfId) chips.push('<span class="player-chip you">You</span>');
+            if (p.isHost) chips.push('<span class="player-chip host">Host</span>');
+            return `<div class="lobby-player-item ${joinedIds.has(id) ? "player-joined" : ""}"><span class="player-name">${escapeHtml(p.name)}</span><span class="player-chips">${chips.join("")}</span></div>`;
+        }).join("")
         : `<div class="lobby-player-item">${escapeHtml(t.lobbyPlayerWaiting)}</div>`;
+
+    if (state.multiplayer.recentLeaves.length) {
+        els.lobbyPlayerList.innerHTML += state.multiplayer.recentLeaves
+            .map((p) => `<div class="lobby-player-item player-left"><span class="player-name">${escapeHtml(p.name)}</span><span class="player-chip left">Left</span></div>`)
+            .join("");
+    }
+
+    state.multiplayer.lastRenderedPlayers = sortedEntries.reduce((acc, [id, p]) => {
+        acc[id] = { name: p.name, isHost: p.isHost };
+        return acc;
+    }, {});
+
+    els.lobbyStartButton.style.display = state.multiplayer.isHost ? "inline-block" : "none";
     els.lobbyStartButton.disabled = !(state.multiplayer.isHost && state.multiplayer.connectedPlayers > 1);
 }
 
@@ -695,6 +743,8 @@ function startGameFromConfig(config) {
 
     state.multiplayer.raceConfig = config;
     state.multiplayer.results = {};
+    state.multiplayer.progress = {};
+    state.multiplayer.lastProgressSentAt = 0;
 
     const ranges = {
         easy:   [25, 45],
@@ -720,9 +770,14 @@ function startGameFromConfig(config) {
     els.playerLabel.textContent = state.username.slice(0, 8);
     els.aiRacers.style.display = state.enableAI ? "block" : "none";
 
+    Object.keys(state.multiplayer.players).forEach((id) => {
+        state.multiplayer.progress[id] = 0;
+    });
+
     renderText();
     updateStats();
     updateProgress();
+    renderMultiplayerRacers();
     updateAIProgress(0);
     updatePositions();
 
@@ -849,6 +904,9 @@ function attachConnectionHandlers(conn) {
             });
             state.multiplayer.connectedPlayers = data.connectedPlayers || data.players.length;
             renderLobbyState("lobbyConnected");
+            if (screens.active.classList.contains("active")) {
+                renderMultiplayerRacers();
+            }
             return;
         }
 
@@ -858,10 +916,34 @@ function attachConnectionHandlers(conn) {
             return;
         }
 
+        if (data.type === "back-to-lobby") {
+            state.multiplayer.mode = "multiplayer";
+            openLobbyScreen();
+            return;
+        }
+
         if (data.type === "race-start" && data.config) {
             state.multiplayer.mode = "multiplayer";
             state.multiplayer.results = {};
             startGameFromConfig(data.config);
+            return;
+        }
+
+        if (data.type === "progress-update") {
+            if (state.multiplayer.isHost) {
+                const progress = Number.isFinite(data.progress) ? Math.max(0, Math.min(1, data.progress)) : 0;
+                state.multiplayer.progress[conn.peer] = progress;
+                broadcastToGuests({ type: "progress-update", id: conn.peer, progress });
+                if (screens.active.classList.contains("active")) {
+                    renderMultiplayerRacers();
+                }
+            } else if (typeof data.id === "string") {
+                const progress = Number.isFinite(data.progress) ? Math.max(0, Math.min(1, data.progress)) : 0;
+                state.multiplayer.progress[data.id] = progress;
+                if (screens.active.classList.contains("active")) {
+                    renderMultiplayerRacers();
+                }
+            }
             return;
         }
 
@@ -893,7 +975,9 @@ function attachConnectionHandlers(conn) {
             delete state.multiplayer.connections[conn.peer];
             delete state.multiplayer.players[conn.peer];
             delete state.multiplayer.results[conn.peer];
+            delete state.multiplayer.progress[conn.peer];
             scheduleRosterBroadcast();
+            renderMultiplayerRacers();
         } else {
             state.multiplayer.connection = null;
             state.multiplayer.connectedPlayers = 1;
@@ -906,7 +990,9 @@ function attachConnectionHandlers(conn) {
             delete state.multiplayer.connections[conn.peer];
             delete state.multiplayer.players[conn.peer];
             delete state.multiplayer.results[conn.peer];
+            delete state.multiplayer.progress[conn.peer];
             scheduleRosterBroadcast();
+            renderMultiplayerRacers();
         } else {
             state.multiplayer.connection = null;
             state.multiplayer.connectedPlayers = 1;
@@ -1045,13 +1131,13 @@ function handlePlayAgain() {
         return;
     }
 
-    if (state.multiplayer.isHost) {
-        broadcastToGuests({ type: "start-race-setup" });
-        initConfigScreen();
+    if (!state.multiplayer.isHost) {
+        // Guests stay on leaderboard until host decides next step.
         return;
     }
 
-    initHostSetupScreen();
+    broadcastToGuests({ type: "start-race-setup" });
+    initConfigScreen();
 }
 
 function handleBackToLobbyFromEnd() {
@@ -1060,6 +1146,12 @@ function handleBackToLobbyFromEnd() {
         return;
     }
 
+    if (!state.multiplayer.isHost) {
+        // Guests stay on leaderboard until host decides next step.
+        return;
+    }
+
+    broadcastToGuests({ type: "back-to-lobby" });
     openLobbyScreen();
 }
 
@@ -1129,6 +1221,7 @@ function startGame() {
     els.typingInput.value = "";
     els.playerLabel.textContent = state.username.slice(0, 8);
     els.aiRacers.style.display = state.enableAI ? "block" : "none";
+    renderMultiplayerRacers();
 
     renderText();
     updateStats();
@@ -1347,6 +1440,66 @@ function updateStats() {
 function updateProgress() {
     const pct = (state.correctChars / state.text.length) * 100;
     els.userProgress.style.width = `${pct}%`;
+
+    if (isMultiplayerSession()) {
+        sendMultiplayerProgressUpdate();
+        renderMultiplayerRacers();
+    }
+}
+
+function sendMultiplayerProgressUpdate(force = false) {
+    if (!isMultiplayerSession()) return;
+    if (!state.text.length) return;
+
+    const progress = Math.min(1, Math.max(0, state.correctChars / state.text.length));
+    if (state.multiplayer.selfId) {
+        state.multiplayer.progress[state.multiplayer.selfId] = progress;
+    }
+
+    const now = Date.now();
+    if (!force && now - state.multiplayer.lastProgressSentAt < 80) return;
+    state.multiplayer.lastProgressSentAt = now;
+
+    if (state.multiplayer.isHost) {
+        broadcastToGuests({ type: "progress-update", id: state.multiplayer.selfId, progress });
+    } else if (state.multiplayer.connection && state.multiplayer.connection.open) {
+        state.multiplayer.connection.send({ type: "progress-update", progress });
+    }
+}
+
+function renderMultiplayerRacers() {
+    if (!isMultiplayerSession()) {
+        els.multiplayerRacers.style.display = "none";
+        els.multiplayerRacers.innerHTML = "";
+        return;
+    }
+
+    const others = Object.entries(state.multiplayer.players)
+        .filter(([id]) => id !== state.multiplayer.selfId)
+        .sort((a, b) => {
+            if (a[1].isHost && !b[1].isHost) return -1;
+            if (!a[1].isHost && b[1].isHost) return 1;
+            return a[1].name.localeCompare(b[1].name);
+        });
+
+    if (!others.length) {
+        els.multiplayerRacers.style.display = "none";
+        els.multiplayerRacers.innerHTML = "";
+        return;
+    }
+
+    els.multiplayerRacers.style.display = "block";
+    els.multiplayerRacers.innerHTML = others.map(([id, p]) => {
+        const progress = Math.round((state.multiplayer.progress[id] || 0) * 100);
+        return `
+            <div class="racer-row">
+                <span class="racer-label">${escapeHtml(p.name)}</span>
+                <div class="progress-bar">
+                    <div class="progress peer-progress" style="width:${progress}%"></div>
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
 function updateAIProgress(elapsedSeconds) {
@@ -1430,7 +1583,11 @@ function renderLeaderboard() {
         </div>
     `).join("");
 
-    $("back-to-lobby-button").style.display = isMultiplayerSession() ? "inline-block" : "none";
+    const isMultiplayer = isMultiplayerSession();
+    const canControlNextRound = !isMultiplayer || state.multiplayer.isHost;
+
+    $("play-again-button").style.display = canControlNextRound ? "inline-block" : "none";
+    $("back-to-lobby-button").style.display = isMultiplayer && canControlNextRound ? "inline-block" : "none";
 }
 
 // ============ End Game ============
@@ -1475,7 +1632,11 @@ function endGame(options = {}) {
         } else if (state.multiplayer.connection && state.multiplayer.connection.open) {
             state.multiplayer.connection.send({ type: "race-result", result: localResult });
         }
+
+        sendMultiplayerProgressUpdate(true);
     }
+
+    renderMultiplayerRacers();
 
     renderLeaderboard();
 
@@ -1502,6 +1663,7 @@ function giveUpGame() {
 function quitGame() {
     clearGameLoops();
     state.isActive = false;
+    renderMultiplayerRacers();
     initHomeScreen();
 }
 

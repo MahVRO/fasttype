@@ -62,8 +62,14 @@ body {
     padding: 6px 26px 6px 10px;
     font-size: 0.8em;
     font-weight: 700;
+    color-scheme: dark;
     cursor: pointer;
     line-height: 1;
+}
+
+.page-language-switcher select option {
+    background-color: #1f2922;
+    color: #edf0e7;
 }
 
 .page-language-switcher select:focus {
@@ -240,16 +246,82 @@ h2 {
 .lobby-player-list {
     margin-top: 12px;
     display: grid;
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
 }
 
 .lobby-player-item {
     background-color: #1f281f;
     border: 1px solid #3a4939;
-    border-radius: 10px;
-    padding: 8px 10px;
+    border-radius: 14px;
+    padding: 10px 12px;
     color: #edf0e7;
     font-weight: 600;
+    min-height: 58px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.player-name {
+    font-size: 0.95em;
+    line-height: 1.2;
+}
+
+.player-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.player-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.7em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border: 1px solid #4d5f4b;
+    background: #2b372c;
+    color: #d9e4d6;
+}
+
+.player-chip.you {
+    border-color: rgba(200, 167, 79, 0.55);
+    background: rgba(200, 167, 79, 0.2);
+    color: #f3dfac;
+}
+
+.player-chip.host {
+    border-color: rgba(93, 159, 129, 0.55);
+    background: rgba(93, 159, 129, 0.2);
+    color: #bce7d1;
+}
+
+.player-chip.left {
+    border-color: rgba(176, 103, 103, 0.5);
+    background: rgba(176, 103, 103, 0.2);
+    color: #ffd6d6;
+}
+
+.player-joined {
+    animation: playerJoin 0.45s ease;
+}
+
+.player-left {
+    animation: playerLeft 0.65s ease forwards;
+}
+
+@keyframes playerJoin {
+    0% { transform: scale(0.96); opacity: 0.45; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes playerLeft {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-5px); }
 }
 
 .lobby-actions-row {
@@ -589,6 +661,10 @@ h2 {
 
 .ai-progress {
     background: linear-gradient(90deg, #ff5722, #ff8a65);
+}
+
+.peer-progress {
+    background: linear-gradient(90deg, #6cb0db, #9ad2f0);
 }
 
 .ai-racers {
