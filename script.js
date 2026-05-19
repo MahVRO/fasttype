@@ -12,19 +12,19 @@ const LANGUAGES_WITH_ACCENTS = ["fr"];
 const PAGE_TEXT = {
     en: {
         pageLabel: "Page",
-        homeSubtitle: "Choose your racing mode",
+        homeSubtitle: "",
         soloTitle: "Solo",
-        soloDesc: "Race against bots",
+        soloDesc: "",
         multiplayerTitle: "Multiplayer",
-        multiplayerDesc: "Race with classmates",
-        multiplayerMenuSubtitle: "Create a private lobby or join with a code",
+        multiplayerDesc: "",
+        multiplayerMenuSubtitle: "",
         createLobbyTitle: "Create lobby",
-        createLobbyDesc: "Generate a private lobby code",
+        createLobbyDesc: "",
         joinLobbyTitle: "Join lobby",
-        joinLobbyDesc: "Enter a private code to join",
+        joinLobbyDesc: "",
         back: "Back",
         lobbyTitle: "Lobby",
-        lobbySubtitle: "Share your code or wait for the host",
+        lobbySubtitle: "",
         lobbyUsernameLabel: "Username",
         lobbyUsernameSave: "Save",
         lobbyCodeLabel: "Lobby Code",
@@ -35,13 +35,13 @@ const PAGE_TEXT = {
         backToLobby: "Back to Lobby",
         lobbyPlayerWaiting: "Waiting for player",
         hostSetupTitle: "Host is setting up the round",
-        hostSetupSubtitle: "Please wait, the race will start soon.",
+        hostSetupSubtitle: "",
         lobbyNotConnected: "Not connected",
         lobbyWaitingHost: "Waiting for the host to start the race",
         lobbyWaitingGuest: "Waiting for another player to join",
         lobbyConnected: "Connected",
         lobbyConnecting: "Connecting...",
-        lobbyPlayers: "Players: {count}/2",
+        lobbyPlayers: "Players: {count}",
         lobbyPrompt: "Enter private code",
         lobbyInvalidCode: "Please enter a valid lobby code.",
         lobbyCreateFailed: "Unable to create lobby. Try again.",
@@ -52,7 +52,7 @@ const PAGE_TEXT = {
         leaderboardTitle: "Leaderboard",
         raceAgain: "Play Again",
         gaveUpTag: "Gave up",
-        configSubtitle: "Set your pace and race against optional rivals",
+        configSubtitle: "",
         usernameLabel: "Username",
         usernamePlaceholder: "Enter your name",
         gameLanguageLabel: "Language",
@@ -81,19 +81,19 @@ const PAGE_TEXT = {
     },
     fr: {
         pageLabel: "Page",
-        homeSubtitle: "Choisis ton mode de course",
+        homeSubtitle: "",
         soloTitle: "Solo",
-        soloDesc: "Course contre des bots",
+        soloDesc: "",
         multiplayerTitle: "Multijoueur",
-        multiplayerDesc: "Course avec tes camarades",
-        multiplayerMenuSubtitle: "Crée un lobby privé ou rejoins-le avec un code",
+        multiplayerDesc: "",
+        multiplayerMenuSubtitle: "",
         createLobbyTitle: "Créer un lobby",
-        createLobbyDesc: "Génère un code de lobby privé",
+        createLobbyDesc: "",
         joinLobbyTitle: "Rejoindre un lobby",
-        joinLobbyDesc: "Entre un code privé pour rejoindre",
+        joinLobbyDesc: "",
         back: "Retour",
         lobbyTitle: "Lobby",
-        lobbySubtitle: "Partage ton code ou attends l'hôte",
+        lobbySubtitle: "",
         lobbyUsernameLabel: "Pseudo",
         lobbyUsernameSave: "Enregistrer",
         lobbyCodeLabel: "Code du lobby",
@@ -104,13 +104,13 @@ const PAGE_TEXT = {
         backToLobby: "Retour au lobby",
         lobbyPlayerWaiting: "En attente d'un joueur",
         hostSetupTitle: "L'hôte prépare la manche",
-        hostSetupSubtitle: "Patiente, la course va commencer.",
+        hostSetupSubtitle: "",
         lobbyNotConnected: "Non connecté",
         lobbyWaitingHost: "En attente du lancement par l'hôte",
         lobbyWaitingGuest: "En attente d'un autre joueur",
         lobbyConnected: "Connecté",
         lobbyConnecting: "Connexion...",
-        lobbyPlayers: "Joueurs : {count}/2",
+        lobbyPlayers: "Joueurs : {count}",
         lobbyPrompt: "Entre le code privé",
         lobbyInvalidCode: "Entre un code de lobby valide.",
         lobbyCreateFailed: "Impossible de créer le lobby. Réessaie.",
@@ -121,7 +121,7 @@ const PAGE_TEXT = {
         leaderboardTitle: "Classement",
         raceAgain: "Rejouer",
         gaveUpTag: "Abandon",
-        configSubtitle: "Règle ton rythme et cours contre des rivaux optionnels",
+        configSubtitle: "",
         usernameLabel: "Pseudo",
         usernamePlaceholder: "Entre ton nom",
         gameLanguageLabel: "Langue du jeu",
@@ -309,6 +309,9 @@ const state = {
     startTime: null,
     timerInterval: null,
     aiInterval: null,
+    animationFrameId: null,
+    lastTimerPaintAt: 0,
+    lastAiPaintAt: 0,
     isActive: false,
     isFinished: false,
     typedChars: 0,        // total characters typed (including corrected ones)
@@ -319,17 +322,20 @@ const state = {
     giveUpCount: 0,
     aiSpeeds: [],         // WPM for each AI
     aiProgress: [0, 0, 0],// 0..1
+    renderedChars: [],
     position: 1,
     multiplayer: {
         peer: null,
         connection: null,
+        connections: {},
         lobbyCode: "",
+        selfId: "",
         isHost: false,
         connectedPlayers: 1,
+        rosterBroadcastTimer: null,
         mode: "solo",
-        remotePlayerName: "Guest",
-        localResult: null,
-        remoteResult: null,
+        players: {},
+        results: {},
         raceConfig: null
     }
 };
@@ -409,28 +415,39 @@ function playTone(freq, duration = 0.05, type = "sine", volume = 0.05) {
 // ============ Initialization ============
 function initHomeScreen() {
     showScreen("home");
-    clearInterval(state.timerInterval);
-    clearInterval(state.aiInterval);
+    clearGameLoops();
 }
 
 function initMultiplayerScreen() {
     showScreen("multiplayer");
-    clearInterval(state.timerInterval);
-    clearInterval(state.aiInterval);
+    clearGameLoops();
 }
 
 function initHostSetupScreen() {
     showScreen("hostSetup");
-    clearInterval(state.timerInterval);
-    clearInterval(state.aiInterval);
+    clearGameLoops();
 }
 
 function initConfigScreen() {
     showScreen("config");
-    clearInterval(state.timerInterval);
-    clearInterval(state.aiInterval);
+    clearGameLoops();
     loadConfigToState();
     applyStateToConfigControls();
+}
+
+function clearGameLoops() {
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+    if (state.aiInterval) {
+        clearInterval(state.aiInterval);
+        state.aiInterval = null;
+    }
+    if (state.animationFrameId !== null) {
+        cancelAnimationFrame(state.animationFrameId);
+        state.animationFrameId = null;
+    }
 }
 
 function showScreen(name) {
@@ -541,20 +558,29 @@ function resetMultiplayerState() {
     if (state.multiplayer.connection) {
         try { state.multiplayer.connection.close(); } catch (e) { /* ignore */ }
     }
+    Object.values(state.multiplayer.connections).forEach((conn) => {
+        try { conn.close(); } catch (e) { /* ignore */ }
+    });
     if (state.multiplayer.peer) {
         try { state.multiplayer.peer.destroy(); } catch (e) { /* ignore */ }
     }
 
     state.multiplayer.peer = null;
     state.multiplayer.connection = null;
+    state.multiplayer.connections = {};
     state.multiplayer.lobbyCode = "";
+    state.multiplayer.selfId = "";
     state.multiplayer.isHost = false;
     state.multiplayer.connectedPlayers = 1;
+    if (state.multiplayer.rosterBroadcastTimer) {
+        clearTimeout(state.multiplayer.rosterBroadcastTimer);
+    }
+    state.multiplayer.rosterBroadcastTimer = null;
     state.multiplayer.mode = "solo";
-    state.multiplayer.remotePlayerName = "Guest";
-    state.multiplayer.localResult = null;
-    state.multiplayer.remoteResult = null;
+    state.multiplayer.players = {};
+    state.multiplayer.results = {};
     state.multiplayer.raceConfig = null;
+    state.renderedChars = [];
 }
 
 function renderLobbyState(statusKey = null) {
@@ -570,15 +596,19 @@ function renderLobbyState(statusKey = null) {
         status = state.multiplayer.isHost ? t.lobbyWaitingGuest : t.lobbyWaitingHost;
     }
 
+    const playerEntries = Object.entries(state.multiplayer.players);
+    const sortedEntries = playerEntries.sort((a, b) => {
+        if (a[1].isHost && !b[1].isHost) return -1;
+        if (!a[1].isHost && b[1].isHost) return 1;
+        return a[1].name.localeCompare(b[1].name);
+    });
+
+    state.multiplayer.connectedPlayers = sortedEntries.length || 1;
     els.lobbyStatus.textContent = status;
     els.lobbyPlayers.textContent = t.lobbyPlayers.replace("{count}", String(state.multiplayer.connectedPlayers));
-    const remoteName = state.multiplayer.connectedPlayers > 1
-        ? state.multiplayer.remotePlayerName
-        : t.lobbyPlayerWaiting;
-    els.lobbyPlayerList.innerHTML = `
-        <div class="lobby-player-item">${escapeHtml(state.username)}${state.multiplayer.isHost ? " (Host)" : ""}</div>
-        <div class="lobby-player-item">${escapeHtml(remoteName)}${state.multiplayer.isHost ? "" : " (Host)"}</div>
-    `;
+    els.lobbyPlayerList.innerHTML = sortedEntries.length
+        ? sortedEntries.map(([id, p]) => `<div class="lobby-player-item">${escapeHtml(p.name)}${p.isHost ? " (Host)" : ""}</div>`).join("")
+        : `<div class="lobby-player-item">${escapeHtml(t.lobbyPlayerWaiting)}</div>`;
     els.lobbyStartButton.disabled = !(state.multiplayer.isHost && state.multiplayer.connectedPlayers > 1);
 }
 
@@ -664,8 +694,7 @@ function startGameFromConfig(config) {
     state.text = config.text;
 
     state.multiplayer.raceConfig = config;
-    state.multiplayer.localResult = null;
-    state.multiplayer.remoteResult = null;
+    state.multiplayer.results = {};
 
     const ranges = {
         easy:   [25, 45],
@@ -683,6 +712,7 @@ function startGameFromConfig(config) {
     state.mistakes = 0;
     state.currentInput = "";
     state.aiProgress = [0, 0, 0];
+    state.renderedChars = [];
     state.position = 1;
     state.giveUpCount = 0;
 
@@ -718,48 +748,140 @@ function persistConfig() {
     }
 }
 
+function getPlayersPayload() {
+    return Object.entries(state.multiplayer.players).map(([id, p]) => ({
+        id,
+        name: p.name,
+        isHost: Boolean(p.isHost)
+    }));
+}
+
+function getResultsPayload() {
+    return Object.entries(state.multiplayer.results).map(([id, r]) => ({
+        id,
+        ...r
+    }));
+}
+
+function broadcastToGuests(message) {
+    if (!state.multiplayer.isHost) return;
+    Object.values(state.multiplayer.connections).forEach((conn) => {
+        if (conn && conn.open) {
+            conn.send(message);
+        }
+    });
+}
+
+function broadcastRoster() {
+    if (!state.multiplayer.isHost) return;
+    state.multiplayer.connectedPlayers = Object.keys(state.multiplayer.players).length;
+    const message = {
+        type: "roster",
+        players: getPlayersPayload(),
+        connectedPlayers: state.multiplayer.connectedPlayers
+    };
+    broadcastToGuests(message);
+    renderLobbyState("lobbyConnected");
+}
+
+function scheduleRosterBroadcast() {
+    if (!state.multiplayer.isHost) return;
+    if (state.multiplayer.rosterBroadcastTimer) return;
+    state.multiplayer.rosterBroadcastTimer = setTimeout(() => {
+        state.multiplayer.rosterBroadcastTimer = null;
+        broadcastRoster();
+    }, 0);
+}
+
+function broadcastResults() {
+    if (!state.multiplayer.isHost) return;
+    broadcastToGuests({ type: "results", results: getResultsPayload() });
+}
+
 function attachConnectionHandlers(conn) {
-    state.multiplayer.connection = conn;
+    if (state.multiplayer.isHost) {
+        state.multiplayer.connections[conn.peer] = conn;
+    } else {
+        state.multiplayer.connection = conn;
+    }
 
     conn.on("open", () => {
-        state.multiplayer.connectedPlayers = 2;
-        renderLobbyState("lobbyConnected");
-
         if (state.multiplayer.isHost) {
-            conn.send({ type: "lobby-state", connectedPlayers: 2 });
+            if (!state.multiplayer.players[conn.peer]) {
+                state.multiplayer.players[conn.peer] = {
+                    name: `Player ${Object.keys(state.multiplayer.players).length}`,
+                    isHost: false
+                };
+            }
+            scheduleRosterBroadcast();
+        } else {
+            renderLobbyState("lobbyConnected");
         }
     });
 
     conn.on("data", (data) => {
         if (!data || typeof data !== "object") return;
 
-        if (data.type === "lobby-state") {
-            state.multiplayer.connectedPlayers = data.connectedPlayers || 2;
-            renderLobbyState("lobbyConnected");
-        }
-
         if (data.type === "hello" && data.username) {
-            state.multiplayer.remotePlayerName = data.username;
-            renderLobbyState();
+            if (state.multiplayer.isHost) {
+                if (!state.multiplayer.players[conn.peer]) {
+                    state.multiplayer.players[conn.peer] = { name: data.username, isHost: false };
+                } else {
+                    state.multiplayer.players[conn.peer].name = data.username;
+                }
+                scheduleRosterBroadcast();
+            }
+            return;
         }
 
         if (data.type === "username-update" && data.username) {
-            state.multiplayer.remotePlayerName = data.username;
-            renderLobbyState();
+            if (state.multiplayer.isHost && state.multiplayer.players[conn.peer]) {
+                state.multiplayer.players[conn.peer].name = data.username;
+                scheduleRosterBroadcast();
+            }
+            return;
+        }
+
+        if (data.type === "roster" && Array.isArray(data.players) && !state.multiplayer.isHost) {
+            state.multiplayer.players = {};
+            data.players.forEach((p) => {
+                state.multiplayer.players[p.id] = { name: p.name, isHost: Boolean(p.isHost) };
+            });
+            state.multiplayer.connectedPlayers = data.connectedPlayers || data.players.length;
+            renderLobbyState("lobbyConnected");
+            return;
         }
 
         if (data.type === "start-race-setup") {
             state.multiplayer.mode = "multiplayer";
             initHostSetupScreen();
+            return;
         }
 
         if (data.type === "race-start" && data.config) {
             state.multiplayer.mode = "multiplayer";
+            state.multiplayer.results = {};
             startGameFromConfig(data.config);
+            return;
         }
 
         if (data.type === "race-result" && data.result) {
-            state.multiplayer.remoteResult = data.result;
+            if (state.multiplayer.isHost) {
+                state.multiplayer.results[conn.peer] = data.result;
+                broadcastResults();
+            }
+            if (screens.end.classList.contains("active")) {
+                renderLeaderboard();
+            }
+            return;
+        }
+
+        if (data.type === "results" && Array.isArray(data.results) && !state.multiplayer.isHost) {
+            state.multiplayer.results = {};
+            data.results.forEach((r) => {
+                const { id, ...payload } = r;
+                state.multiplayer.results[id] = payload;
+            });
             if (screens.end.classList.contains("active")) {
                 renderLeaderboard();
             }
@@ -767,15 +889,29 @@ function attachConnectionHandlers(conn) {
     });
 
     conn.on("close", () => {
-        state.multiplayer.connection = null;
-        state.multiplayer.connectedPlayers = 1;
-        renderLobbyState(state.multiplayer.isHost ? "lobbyWaitingGuest" : "lobbyNotConnected");
+        if (state.multiplayer.isHost) {
+            delete state.multiplayer.connections[conn.peer];
+            delete state.multiplayer.players[conn.peer];
+            delete state.multiplayer.results[conn.peer];
+            scheduleRosterBroadcast();
+        } else {
+            state.multiplayer.connection = null;
+            state.multiplayer.connectedPlayers = 1;
+            renderLobbyState("lobbyNotConnected");
+        }
     });
 
     conn.on("error", () => {
-        state.multiplayer.connection = null;
-        state.multiplayer.connectedPlayers = 1;
-        renderLobbyState(state.multiplayer.isHost ? "lobbyWaitingGuest" : "lobbyNotConnected");
+        if (state.multiplayer.isHost) {
+            delete state.multiplayer.connections[conn.peer];
+            delete state.multiplayer.players[conn.peer];
+            delete state.multiplayer.results[conn.peer];
+            scheduleRosterBroadcast();
+        } else {
+            state.multiplayer.connection = null;
+            state.multiplayer.connectedPlayers = 1;
+            renderLobbyState("lobbyNotConnected");
+        }
     });
 }
 
@@ -796,22 +932,19 @@ function createLobby() {
     state.multiplayer.isHost = true;
     state.multiplayer.mode = "multiplayer";
     state.multiplayer.connectedPlayers = 1;
+    state.multiplayer.players = {};
+    state.multiplayer.results = {};
     $("lobby-username-input").value = state.username;
     openLobbyScreen("lobbyConnecting");
 
-    peer.on("open", () => {
+    peer.on("open", (id) => {
+        state.multiplayer.selfId = id;
+        state.multiplayer.players[id] = { name: state.username, isHost: true };
         renderLobbyState("lobbyWaitingGuest");
     });
 
     peer.on("connection", (conn) => {
-        if (state.multiplayer.connection) {
-            conn.close();
-            return;
-        }
         attachConnectionHandlers(conn);
-        conn.on("open", () => {
-            conn.send({ type: "hello", username: state.username });
-        });
     });
 
     peer.on("error", () => {
@@ -844,10 +977,13 @@ function joinLobby() {
     state.multiplayer.isHost = false;
     state.multiplayer.mode = "multiplayer";
     state.multiplayer.connectedPlayers = 1;
+    state.multiplayer.players = {};
+    state.multiplayer.results = {};
     $("lobby-username-input").value = state.username;
     openLobbyScreen("lobbyConnecting");
 
-    peer.on("open", () => {
+    peer.on("open", (id) => {
+        state.multiplayer.selfId = id;
         const conn = peer.connect(lobbyPeerIdFromCode(lobbyCode), { reliable: true });
         attachConnectionHandlers(conn);
         conn.on("open", () => {
@@ -873,19 +1009,33 @@ function saveLobbyUsername() {
     $("username").value = state.username;
     persistConfig();
 
+    if (state.multiplayer.selfId) {
+        if (!state.multiplayer.players[state.multiplayer.selfId]) {
+            state.multiplayer.players[state.multiplayer.selfId] = { name: state.username, isHost: state.multiplayer.isHost };
+        } else {
+            state.multiplayer.players[state.multiplayer.selfId].name = state.username;
+        }
+    }
+
+    if (state.multiplayer.isHost) {
+        broadcastRoster();
+    }
+
     if (state.multiplayer.connection && state.multiplayer.connection.open) {
         state.multiplayer.connection.send({ type: "username-update", username: state.username });
     }
+
+    renderLobbyState();
 }
 
 function startMultiplayerRace() {
     const t = getPageText();
-    if (!(state.multiplayer.isHost && state.multiplayer.connection && state.multiplayer.connection.open)) {
+    if (!(state.multiplayer.isHost && Object.keys(state.multiplayer.connections).length > 0)) {
         alert(t.lobbyStartUnavailable);
         return;
     }
 
-    state.multiplayer.connection.send({ type: "start-race-setup" });
+    broadcastToGuests({ type: "start-race-setup" });
     initConfigScreen();
 }
 
@@ -896,9 +1046,7 @@ function handlePlayAgain() {
     }
 
     if (state.multiplayer.isHost) {
-        if (state.multiplayer.connection && state.multiplayer.connection.open) {
-            state.multiplayer.connection.send({ type: "start-race-setup" });
-        }
+        broadcastToGuests({ type: "start-race-setup" });
         initConfigScreen();
         return;
     }
@@ -942,9 +1090,11 @@ function startGame() {
             text: buildRaceTextForCurrentSettings()
         };
 
-        if (state.multiplayer.connection && state.multiplayer.connection.open) {
-            state.multiplayer.connection.send({ type: "race-start", config });
+        state.multiplayer.results = {};
+        if (state.multiplayer.selfId) {
+            delete state.multiplayer.results[state.multiplayer.selfId];
         }
+        broadcastToGuests({ type: "race-start", config });
 
         startGameFromConfig(config);
         return;
@@ -971,6 +1121,7 @@ function startGame() {
     state.mistakes = 0;
     state.currentInput = "";
     state.aiProgress = [0, 0, 0];
+    state.renderedChars = [];
     state.position = 1;
     state.giveUpCount = 0;
 
@@ -996,6 +1147,7 @@ function handleTyping(e) {
     if (state.isFinished) return;
 
     const value = els.typingInput.value;
+    const previousLength = state.currentInput.length;
 
     // Enforce strictly linear typing: no going backwards.
     if (value.length < state.currentInput.length) {
@@ -1030,7 +1182,7 @@ function handleTyping(e) {
         startTimer();
     }
 
-    renderText();
+    renderText(previousLength);
     updateProgress();
     updateStats();
     updatePositions();
@@ -1061,33 +1213,69 @@ function charactersMatch(inputChar, expectedChar) {
 }
 
 // ============ Render Text with Highlights ============
-function renderText() {
-    const text = state.text;
-    const input = state.currentInput;
-    let html = "";
+function buildTextSpans() {
+    const fragment = document.createDocumentFragment();
+    const chars = [];
 
-    for (let i = 0; i < text.length; i++) {
-        let cls = "char";
-        if (i < input.length) {
-            cls += input[i] === text[i] ? " correct" : " incorrect";
-        } else if (i === input.length) {
-            cls += " current";
-            if (Date.now() < state.errorFlashUntil) cls += " current-error";
-        }
-        // Keep regular spaces so long texts can naturally wrap across lines.
-        const ch = escapeHtml(text[i]);
-        html += `<span class="${cls}">${ch}</span>`;
+    for (let i = 0; i < state.text.length; i++) {
+        const span = document.createElement("span");
+        span.className = "char";
+        span.textContent = state.text[i];
+        fragment.appendChild(span);
+        chars.push(span);
     }
-    els.textDisplay.innerHTML = html;
+
+    els.textDisplay.textContent = "";
+    els.textDisplay.appendChild(fragment);
+    state.renderedChars = chars;
+}
+
+function renderText(previousLength = 0) {
+    if (!state.renderedChars.length || state.renderedChars.length !== state.text.length) {
+        buildTextSpans();
+        previousLength = 0;
+    }
+
+    const inputLength = state.currentInput.length;
+
+    if (inputLength < previousLength) {
+        for (let i = inputLength; i < previousLength; i++) {
+            const ch = state.renderedChars[i];
+            if (ch) {
+                ch.className = "char";
+            }
+        }
+    }
+
+    for (let i = previousLength; i < inputLength; i++) {
+        const ch = state.renderedChars[i];
+        if (ch) {
+            ch.className = "char correct";
+        }
+    }
+
+    if (inputLength < state.renderedChars.length) {
+        const current = state.renderedChars[inputLength];
+        current.className = Date.now() < state.errorFlashUntil
+            ? "char current current-error"
+            : "char current";
+    }
 }
 
 function triggerTypingErrorFeedback() {
     state.errorFlashUntil = Date.now() + 220;
+    const idx = state.currentInput.length;
+    const current = state.renderedChars[idx];
+    if (current) current.classList.add("current-error");
     els.textDisplay.classList.remove("typing-error");
     // Restart the animation when mistakes happen in rapid succession.
     void els.textDisplay.offsetWidth;
     els.textDisplay.classList.add("typing-error");
-    setTimeout(() => els.textDisplay.classList.remove("typing-error"), 220);
+    setTimeout(() => {
+        els.textDisplay.classList.remove("typing-error");
+        const caret = state.renderedChars[state.currentInput.length];
+        if (caret) caret.classList.remove("current-error");
+    }, 220);
 }
 
 function escapeHtml(c) {
@@ -1097,17 +1285,34 @@ function escapeHtml(c) {
 
 // ============ Timer ============
 function startTimer() {
+    clearGameLoops();
     state.isActive = true;
     state.startTime = Date.now();
-    state.timerInterval = setInterval(updateTimer, 50);
+    state.lastTimerPaintAt = 0;
+    state.lastAiPaintAt = 0;
 
-    if (state.enableAI) {
-        state.aiInterval = setInterval(() => {
+    const tick = (now) => {
+        if (!state.isActive || state.isFinished || !state.startTime) {
+            state.animationFrameId = null;
+            return;
+        }
+
+        if (!state.lastTimerPaintAt || now - state.lastTimerPaintAt >= 50) {
+            updateTimer();
+            state.lastTimerPaintAt = now;
+        }
+
+        if (state.enableAI && (!state.lastAiPaintAt || now - state.lastAiPaintAt >= 100)) {
             const elapsed = (Date.now() - state.startTime) / 1000;
             updateAIProgress(elapsed);
             updatePositions();
-        }, 100);
-    }
+            state.lastAiPaintAt = now;
+        }
+
+        state.animationFrameId = requestAnimationFrame(tick);
+    };
+
+    state.animationFrameId = requestAnimationFrame(tick);
 }
 
 function updateTimer() {
@@ -1188,8 +1393,7 @@ function renderLeaderboard() {
     };
 
     if (isMultiplayerSession()) {
-        if (state.multiplayer.localResult) rows.push(state.multiplayer.localResult);
-        if (state.multiplayer.remoteResult) rows.push(state.multiplayer.remoteResult);
+        rows.push(...Object.values(state.multiplayer.results));
         rows.sort(sortRows);
     } else {
         const elapsed = state.startTime ? (Date.now() - state.startTime) / 1000 : 0;
@@ -1234,8 +1438,7 @@ function endGame(options = {}) {
     const { forcedPosition = null, gaveUp = false } = options;
     state.isFinished = true;
     state.isActive = false;
-    clearInterval(state.timerInterval);
-    clearInterval(state.aiInterval);
+    clearGameLoops();
 
     const elapsed = state.startTime ? (Date.now() - state.startTime) / 1000 : 0;
     const wpm = calculateWPM(elapsed);
@@ -1257,16 +1460,20 @@ function endGame(options = {}) {
     els.finalPosition.textContent = `${finalPos}${ordinal(finalPos)}`;
 
     if (isMultiplayerSession()) {
-        state.multiplayer.localResult = {
+        const localResult = {
             name: state.username,
             wpm,
             accuracy: acc,
             timeSeconds: elapsed,
             gaveUp
         };
+        const localId = state.multiplayer.selfId || "local";
+        state.multiplayer.results[localId] = localResult;
 
-        if (state.multiplayer.connection && state.multiplayer.connection.open) {
-            state.multiplayer.connection.send({ type: "race-result", result: state.multiplayer.localResult });
+        if (state.multiplayer.isHost) {
+            broadcastResults();
+        } else if (state.multiplayer.connection && state.multiplayer.connection.open) {
+            state.multiplayer.connection.send({ type: "race-result", result: localResult });
         }
     }
 
@@ -1276,6 +1483,9 @@ function endGame(options = {}) {
 }
 
 function getTotalRacers() {
+    if (isMultiplayerSession()) {
+        return Math.max(1, Object.keys(state.multiplayer.players).length);
+    }
     return state.enableAI ? 4 : 1;
 }
 
@@ -1290,8 +1500,7 @@ function giveUpGame() {
 
 // ============ Quit ============
 function quitGame() {
-    clearInterval(state.timerInterval);
-    clearInterval(state.aiInterval);
+    clearGameLoops();
     state.isActive = false;
     initHomeScreen();
 }
